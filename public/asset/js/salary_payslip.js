@@ -741,25 +741,9 @@ $('.btn-send-all-payslips').on('click', function () {
 });
 
 $('.btn-download-all-payslips').on('click', function () {
-    const $button = $(this);
-    $.ajax({
-        url: appUrl + '/salary_payslip/save-all-payslips-to-documents',
-        type: 'POST',
-        data: {
-            _token: $('meta[name="csrf-token"]').attr('content'),
-            year: CURRENT_DATE.getFullYear(),
-            month: CURRENT_DATE.getMonth() + 1
-        },
-        beforeSend: function () { $button.prop('disabled', true); },
-        complete: function () { $button.prop('disabled', false); },
-        error: function (res) {
-            const json = res.responseJSON || {};
-            showAlertMsg(json.message || 'Failed to save payslips to Documents', 'error', 5000);
-        },
-        success: function (res) {
-            showAlertMsg(res.message, 'success', 5000);
-        }
-    });
+    const year = CURRENT_DATE.getFullYear();
+    const month = CURRENT_DATE.getMonth() + 1;
+    window.location.href = `${appUrl}/salary_payslip/export-excel?year=${year}&month=${month}`;
 });
 
 $('#modalAllPayslipSend .btn-close-all-payslips').on('click', function () {

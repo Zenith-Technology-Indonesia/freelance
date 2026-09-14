@@ -202,6 +202,7 @@ Route::middleware('auth', 'management')->group(function () {
     Route::get('/salary_payslip/view_payslip/{employeeId}/{year}/{month}', [SalaryPayslipController::class, 'viewPDFPayslip'])->name('salary_payslip.viewPayslip');
     Route::get('/salary_payslip/download_pdf_payslip/{employeeId}/{year}/{month}', [SalaryPayslipController::class, 'downloadPDFPayslip'])->name('salary_payslip.downloadPDFPayslip');
     Route::post('/salary_payslip/save-all-payslips-to-documents', [SalaryPayslipController::class, 'saveAllPayslipsToDocuments'])->name('salary_payslip.saveAllPayslipsToDocuments');
+    Route::get('/salary_payslip/export-excel', [SalaryPayslipController::class, 'exportPayslipsExcel'])->name('salary_payslip.exportPayslipsExcel');
     
     Route::post('/salary_payslip/save-employee-salary-by-year-month', [SalaryPayslipController::class, 'saveEmployeeSalaryByYearMonth'])->name('salary_payslip.saveEmployeeSalaryByYearMonth');
     Route::post('/salary_payslip/send-employee-payslip-by-year-month', [SalaryPayslipController::class, 'sendEmployeePayslipByYearMonth'])->name('salary_payslip.sendEmployeePayslipByYearMonth');
