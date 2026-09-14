@@ -105,23 +105,29 @@ function openDocumentPreview(fileElement) {
     downloadLink.href = url;
     downloadLink.setAttribute("download", fileName);
 
+    // Check if file can be previewed
+    const canPreview = (fileType === "application/pdf" || extension === "pdf") || 
+                       (fileType.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(extension));
+
+    // Only PDF and Images (jpg, png, gif, webp, svg) dapat preview
     if (fileType === "application/pdf" || extension === "pdf") {
         content.innerHTML = `<iframe class="document-preview-frame" src="${escapeHtml(url)}" title="${escapeHtml(fileName)}"></iframe>`;
+        openLink.disabled = false;
+        openLink.classList.remove("disabled");
     } else if (fileType.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(extension)) {
         content.innerHTML = `<div class="document-preview-media"><img src="${escapeHtml(url)}" alt="${escapeHtml(fileName)}"></div>`;
-    } else if (fileType.startsWith("video/") || ["mp4", "webm", "ogg"].includes(extension)) {
-        content.innerHTML = `<div class="document-preview-media"><video src="${escapeHtml(url)}" controls autoplay></video></div>`;
-    } else if (fileType.startsWith("audio/") || ["mp3", "wav", "m4a", "ogg"].includes(extension)) {
-        content.innerHTML = `<div class="document-preview-audio"><audio src="${escapeHtml(url)}" controls autoplay></audio></div>`;
-    } else if (fileType.startsWith("text/") || ["txt", "csv", "json", "xml"].includes(extension)) {
-        content.innerHTML = `<iframe class="document-preview-frame" src="${escapeHtml(url)}" title="${escapeHtml(fileName)}"></iframe>`;
+        openLink.disabled = false;
+        openLink.classList.remove("disabled");
     } else {
         content.innerHTML = `
             <div class="document-preview-unavailable">
                 <span class="material-symbols-outlined">draft</span>
                 <p class="mb-1">Preview is not available for this file type.</p>
+                <p class="preview-supported-types">Supported file types: PDF, JPG, PNG, GIF, WEBP, SVG</p>
                 <small>Use Open File or Download to view it.</small>
             </div>`;
+        openLink.disabled = true;
+        openLink.classList.add("disabled");
     }
 
     bootstrap.Modal.getOrCreateInstance(document.getElementById("modalFileDetail")).show();
