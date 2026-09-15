@@ -90,52 +90,26 @@ function escapeHtml(text) {
         .replace(/'/g, "&#039;");
 }
 
-function openDocumentPreview(fileElement) {
+function openDocumentInNewTab(fileElement) {
     const url = fileElement.dataset.fileUrl || "";
-    const fileName = fileElement.dataset.fileName || "File";
-    const fileType = (fileElement.dataset.fileType || "").toLowerCase();
-    const extension = fileName.split(".").pop().toLowerCase();
-    const content = document.getElementById("fileDetailContent");
-    const title = document.getElementById("filePreviewTitle");
-    const openLink = document.getElementById("openPreviewFile");
-    const downloadLink = document.getElementById("downloadPreviewFile");
-
-    title.textContent = fileName;
-    openLink.href = url;
-    downloadLink.href = url;
-    downloadLink.setAttribute("download", fileName);
-
-    // Check if file can be previewed
-    const canPreview = (fileType === "application/pdf" || extension === "pdf") || 
-                       (fileType.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(extension));
-
-    // Only PDF and Images (jpg, png, gif, webp, svg) dapat preview
-    if (fileType === "application/pdf" || extension === "pdf") {
-        content.innerHTML = `<iframe class="document-preview-frame" src="${escapeHtml(url)}" title="${escapeHtml(fileName)}"></iframe>`;
-        openLink.disabled = false;
-        openLink.classList.remove("disabled");
-    } else if (fileType.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(extension)) {
-        content.innerHTML = `<div class="document-preview-media"><img src="${escapeHtml(url)}" alt="${escapeHtml(fileName)}"></div>`;
-        openLink.disabled = false;
-        openLink.classList.remove("disabled");
-    } else {
-        content.innerHTML = `
-            <div class="document-preview-unavailable">
-                <span class="material-symbols-outlined">draft</span>
-                <p class="mb-1">Preview is not available for this file type.</p>
-                <p class="preview-supported-types">Supported file types: PDF, JPG, PNG, GIF, WEBP, SVG</p>
-                <small>Use Open File or Download to view it.</small>
-            </div>`;
-        openLink.disabled = true;
-        openLink.classList.add("disabled");
+    if (url) {
+        window.open(url, "_blank", "noopener");
     }
-
-    bootstrap.Modal.getOrCreateInstance(document.getElementById("modalFileDetail")).show();
 }
 
-document.getElementById("modalFileDetail")?.addEventListener("hidden.bs.modal", function () {
-    document.getElementById("fileDetailContent").innerHTML = "";
-});
+function downloadDocument(fileElement) {
+    const url = fileElement.dataset.fileUrl || "";
+    if (!url) {
+        return;
+    }
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileElement.dataset.fileName || "";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
 
 function canManageDocument(item) {
     return Number(item?.created_by || 0) === Number(document.querySelector('meta[name="current-user-id"]')?.content || 0);
@@ -345,16 +319,18 @@ function renderTable(folders, files = [], currentFolderData = null) {
                 <td>${formatBytes(file.file_size)}</td>
                 <td>${formatDateWithSlash(file.updated_at)}</td>
                 <td>
-                    ${canManageDocument(file) ? `<div class="dropdown">
+                    <div class="dropdown">
                         <button class="btn btn-menu-folder px-3 py-2 dropdown-toggle no-caret" data-bs-toggle="dropdown">
                             <span class="material-symbols-outlined">more_vert</span>
                         </button>
                         <div class="dropdown-menu">
-                            <div class="dropdown-item add-doc edit-file"><span class="material-symbols-outlined me-2">border_color</span>Change Name</div>
-                            <div class="dropdown-item add-doc delete-file"><span class="material-symbols-outlined me-2">delete</span>Delete</div>
+                            ${canManageDocument(file) ? `
+                                <div class="dropdown-item add-doc edit-file"><span class="material-symbols-outlined me-2">border_color</span>Change Name</div>
+                                <div class="dropdown-item add-doc delete-file"><span class="material-symbols-outlined me-2">delete</span>Delete</div>
+                            ` : ''}
                             <div class="dropdown-item add-doc download-file"><span class="material-symbols-outlined me-2">download</span>Download</div>
                         </div>
-                    </div>` : ''}
+                    </div>
                 </td>
             </tr>
         `;
@@ -451,16 +427,18 @@ function renderGrid(folders, files = [], currentFolderData = null) {
                 <div class="file-card" data-file-id="${file.id}" data-file-name="${escapeHtml(file.file_name)}" data-file-url="${href}" data-file-type="${escapeHtml(file.file_type)}" data-file-updated="${file.updated_at}">
                     <div class="file-card-header d-flex justify-content-between align-items-start">
                         <span class="file-type-badge">${escapeHtml(file.file_type.split("/").pop() || fileExt.split('.').pop() || 'FILE').toUpperCase()}</span>
-                        ${canManageDocument(file) ? `<div class="dropdown">
+                        <div class="dropdown">
                             <button class="btn btn-menu-folder dropdown-toggle no-caret" data-bs-toggle="dropdown">
                                 <span class="material-symbols-outlined">more_vert</span>
                             </button>
                             <div class="dropdown-menu dropdown-menu-end">
-                                <div class="dropdown-item add-doc edit-file"><span class="material-symbols-outlined me-2">border_color</span>Change Name</div>
-                                <div class="dropdown-item add-doc delete-file"><span class="material-symbols-outlined me-2">delete</span>Delete</div>
+                                ${canManageDocument(file) ? `
+                                    <div class="dropdown-item add-doc edit-file"><span class="material-symbols-outlined me-2">border_color</span>Change Name</div>
+                                    <div class="dropdown-item add-doc delete-file"><span class="material-symbols-outlined me-2">delete</span>Delete</div>
+                                ` : ''}
                                 <div class="dropdown-item add-doc download-file"><span class="material-symbols-outlined me-2">download</span>Download</div>
                             </div>
-                        </div>` : ''}
+                        </div>
                     </div>
                     <div class="file-preview">
                         <div class="file-preview-link" role="button" tabindex="0">
@@ -912,12 +890,12 @@ document.addEventListener("click", function (event) {
     if (downloadFileTarget) {
         event.stopPropagation();
         const row = downloadFileTarget.closest(".file-row, .file-card");
-        window.open(row.dataset.fileUrl, "_blank");
+        downloadDocument(row);
         return;
     }
     const fileTarget = event.target.closest(".file-row, .file-card");
     if (fileTarget && !event.target.closest(".dropdown")) {
-        openDocumentPreview(fileTarget);
+        openDocumentInNewTab(fileTarget);
         return;
     }
     const breadcrumbTarget = event.target.closest(

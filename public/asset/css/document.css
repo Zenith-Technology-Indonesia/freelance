@@ -579,63 +579,6 @@
     border: none;
 }
 
-/* CSS spesifik hanya untuk modal file preview */
-#modalFileDetail .modal-footer-custom {
-    width: 100%;
-    border: none;
-    justify-content: flex-end;
-    margin-top: 3rem;
-    padding: 12px 0;
-    gap: 10px;
-    display: flex;
-    flex-wrap: wrap;
-}
-
-#modalFileDetail .modal-footer-custom button,
-#modalFileDetail .modal-footer-custom a {
-    height: auto;
-    padding: 10px 24px;
-    border-radius: 5px;
-    font-size: 14px;
-    font-weight: 500;
-    min-width: auto;
-    width: auto;
-    border: none;
-}
-
-#modalFileDetail .modal-footer-custom .btn-light {
-    background: #e3e4ee;
-    color: #596069;
-}
-
-#modalFileDetail .modal-footer-custom .btn-light:hover {
-    background: #d4d5db;
-    color: #596069;
-}
-
-#modalFileDetail .modal-footer-custom .btn-light.disabled {
-    background: #d9dce8;
-    color: #a0a8b5;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-#modalFileDetail .modal-footer-custom .btn-light.disabled:hover {
-    background: #d9dce8;
-    color: #a0a8b5;
-}
-
-#modalFileDetail .modal-footer-custom .btn-submit-black {
-    background: #333333;
-    color: #fff;
-    text-decoration: none;
-}
-
-#modalFileDetail .modal-footer-custom .btn-submit-black:hover {
-    background: #1a1a1a;
-    color: #fff;
-}
-
 .edit-file .material-symbols-outlined,
 .delete-file .material-symbols-outlined,
 .download-file .material-symbols-outlined {
@@ -702,65 +645,6 @@
 .file-card,
 .file-preview-link {
     cursor: pointer;
-}
-
-.document-preview-body {
-    min-height: 65vh;
-    padding: 0;
-    background: #f4f5f7;
-}
-
-.document-preview-frame {
-    display: block;
-    width: 100%;
-    height: 70vh;
-    border: 0;
-    background: #fff;
-}
-
-.document-preview-media,
-.document-preview-audio,
-.document-preview-unavailable {
-    min-height: 65vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-}
-
-.document-preview-media img,
-.document-preview-media video {
-    max-width: 100%;
-    max-height: 65vh;
-    object-fit: contain;
-}
-
-.document-preview-audio audio {
-    width: min(600px, 100%);
-}
-
-.document-preview-unavailable {
-    flex-direction: column;
-    color: #6c757d;
-    text-align: center;
-}
-
-.document-preview-unavailable .material-symbols-outlined {
-    font-size: 64px;
-    margin-bottom: 12px;
-}
-
-.preview-supported-types {
-    font-size: 12px;
-    color: #a0a8b5;
-    margin: 8px 0 !important;
-    font-weight: 400;
-}
-
-.document-preview-unavailable small {
-    font-size: 11px;
-    color: #a0a8b5;
-    font-weight: 400;
 }
 
 @media (max-width: 576px) {

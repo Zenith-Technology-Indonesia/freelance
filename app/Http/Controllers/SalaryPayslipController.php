@@ -453,7 +453,7 @@ class SalaryPayslipController extends Controller
 
         $employeeAttendanceAbsent = $employeeAttendanceAbsent[0] ?? 0;
 
-        $employeeAttendanceNotComplete = $employeePayslip?->attendance_incomplete;
+        $employeeAttendanceNotComplete = $employeePayslip?->attendance_incomplete ?? 0;
 
         $totalActiveDay = $this->getActiveDay($firstDayOfMonth,$lastDayOfMonth);
 
@@ -532,7 +532,7 @@ class SalaryPayslipController extends Controller
             
             $employeeAttendanceNotComplete = $request->filled('attendance_not_complete')
                 ? (int) $request->attendance_not_complete
-                : null;
+                : 0;
 
             
             $salaryData['employee_id'] = $employee->id;
@@ -787,7 +787,9 @@ class SalaryPayslipController extends Controller
         $eligibleCount = $employeeIds->count();
         $userId = auth()->id();
 
-        $payslips = EmployeePayslip::with('employee.department')
+        $payslips = EmployeePayslip::with([
+                'employee.department', 'employee.partner', 'employee.division',
+            ])
             ->whereIn('employee_id', $employeeIds)
             ->where('date_salary', $dateSalary)
             ->where('status', '<>', 'DELETED')
@@ -808,8 +810,15 @@ class SalaryPayslipController extends Controller
         }
 
         $savedCount = 0;
-        DB::transaction(function () use ($payslips, $dateSalary, $userId, $validated, &$savedCount) {
+        $archiveOwnerId = auth()->user()?->employee?->id;
+
+        DB::transaction(function () use ($payslips, $dateSalary, $userId, $archiveOwnerId, $validated, &$savedCount) {
             foreach ($payslips as $payslip) {
+                // Older salary records may have a NULL value. A blank attendance
+                // incomplete deduction must always be treated as zero when sent.
+                if ($payslip->attendance_incomplete === null) {
+                    $payslip->attendance_incomplete = 0;
+                }
                 $payslip->date_payslip_send = now();
                 $payslip->status = 'PAYSLIP_SENT';
                 $payslip->updated_by = $userId;
@@ -834,7 +843,8 @@ class SalaryPayslipController extends Controller
                 $payslips,
                 (int) $validated['year'],
                 (int) $validated['month'],
-                $userId
+                $userId,
+                $archiveOwnerId ? (int) $archiveOwnerId : null
             );
         });
 
@@ -919,8 +929,8 @@ class SalaryPayslipController extends Controller
         ]);
     }
 
-    /** Store a copy below each employee: Payslip / year / month / file. */
-    private function savePayslipsToEmployeeDocuments($payslips, int $year, int $month, int $actorId): int
+    /** Store a copy below each employee: employee / Payslip / year / month / file. */
+    private function savePayslipsToEmployeeDocuments($payslips, int $year, int $month, int $actorId, ?int $archiveOwnerId = null): int
     {
         $firstDay = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
         $lastDay = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
@@ -933,7 +943,21 @@ class SalaryPayslipController extends Controller
                 continue;
             }
 
-            $payslipFolder = $this->findOrCreatePayslipFolder($employee->id, null, 'Payslip', $actorId);
+            // Employee documents are rooted at the employee's existing folder
+            // (which already contains CV and other documents), not beside it.
+            $employeeRootFolder = $this->findOrCreatePayslipFolder($employee->id, null, $employee->name, $actorId);
+            $legacyPayslipRoot = DocumentFolders::where('employee_id', $employee->id)
+                ->whereNull('parent_folder_id')
+                ->whereRaw('LOWER(folder_name) = ?', ['payslip'])
+                ->first();
+            if ($legacyPayslipRoot) {
+                $legacyPayslipRoot->update([
+                    'parent_folder_id' => $employeeRootFolder->id,
+                    'updated_by' => $actorId,
+                ]);
+            }
+
+            $payslipFolder = $this->findOrCreatePayslipFolder($employee->id, $employeeRootFolder->id, 'Payslip', $actorId);
             $yearFolder = $this->findOrCreatePayslipFolder($employee->id, $payslipFolder->id, (string) $year, $actorId);
             $monthFolder = $this->findOrCreatePayslipFolder($employee->id, $yearFolder->id, $monthName, $actorId, [str_pad((string) $month, 2, '0', STR_PAD_LEFT), (string) $month]);
 
@@ -957,10 +981,62 @@ class SalaryPayslipController extends Controller
             );
             $employeePayslip->payslip_path = $relativePath;
             $employeePayslip->save();
+
+            if ($archiveOwnerId !== null) {
+                $this->savePayslipToAdminArchive(
+                    $employee,
+                    $pdfContent,
+                    $year,
+                    $month,
+                    $monthName,
+                    $actorId,
+                    $archiveOwnerId
+                );
+            }
             $savedCount++;
         }
 
         return $savedCount;
+    }
+
+    /** Store the admin-facing copy: Payslip / Department / Partner / Site / Employee / year / month. */
+    private function savePayslipToAdminArchive(
+        Employee $employee,
+        string $pdfContent,
+        int $year,
+        int $month,
+        string $monthName,
+        int $actorId,
+        int $archiveOwnerId
+    ): void {
+        $departmentName = $this->safeDocumentName($employee->department?->name_department, 'Tanpa Department');
+        $partnerName = $this->safeDocumentName($employee->partner?->partner_name, 'Tanpa Partner');
+        $siteName = $this->safeDocumentName($employee->division?->name_division, 'Tanpa Site');
+        $employeeName = $this->safeDocumentName($employee->name, (string) $employee->id);
+
+        $payslipFolder = $this->findOrCreatePayslipFolder($archiveOwnerId, null, 'Payslip', $actorId);
+        $departmentFolder = $this->findOrCreatePayslipFolder($archiveOwnerId, $payslipFolder->id, $departmentName, $actorId);
+        $partnerFolder = $this->findOrCreatePayslipFolder($archiveOwnerId, $departmentFolder->id, $partnerName, $actorId);
+        $siteFolder = $this->findOrCreatePayslipFolder($archiveOwnerId, $partnerFolder->id, $siteName, $actorId);
+        $employeeFolder = $this->findOrCreatePayslipFolder($archiveOwnerId, $siteFolder->id, $employeeName, $actorId);
+        $yearFolder = $this->findOrCreatePayslipFolder($archiveOwnerId, $employeeFolder->id, (string) $year, $actorId);
+        $monthFolder = $this->findOrCreatePayslipFolder($archiveOwnerId, $yearFolder->id, $monthName, $actorId, [str_pad((string) $month, 2, '0', STR_PAD_LEFT), (string) $month]);
+
+        $directory = public_path('file/documents/' . $monthFolder->id);
+        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
+            throw new \RuntimeException('Unable to create admin payslip archive directory.');
+        }
+
+        $storedName = "payslip_{$employee->id}_{$year}_" . str_pad((string) $month, 2, '0', STR_PAD_LEFT) . '.pdf';
+        $relativePath = 'file/documents/' . $monthFolder->id . '/' . $storedName;
+        if (file_put_contents(public_path($relativePath), $pdfContent) === false) {
+            throw new \RuntimeException('Unable to save admin payslip archive PDF.');
+        }
+
+        Document::updateOrCreate(
+            ['employee_id' => $archiveOwnerId, 'folder_id' => $monthFolder->id, 'file_name' => 'Payslip - ' . $employeeName . '.pdf'],
+            ['file_path' => $relativePath, 'file_type' => 'application/pdf', 'file_size' => strlen($pdfContent), 'created_by' => $actorId, 'updated_by' => $actorId]
+        );
     }
 
     public function exportPayslipsExcel(Request $request)

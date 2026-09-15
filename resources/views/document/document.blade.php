@@ -452,24 +452,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalFileDetail" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content modal-content-custom">
-                <div class="modal-header border-0 position-relative d-flex justofy-content-center">
-                    <h5 class="modal-title modal-title-custom text-truncate" id="filePreviewTitle">File Preview</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body document-preview-body" id="fileDetailContent">
-                </div>
-                <div class="modal-footer modal-footer-custom">
-                    <a href="#" target="_blank" rel="noopener" class="btn btn-light" id="openPreviewFile">Open File</a>
-                    <a href="#" class="btn btn-submit-black" id="downloadPreviewFile">Download</a>
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="alert-delete-container mb-3" style="width: 100%;"></div>
 
     <x-slot name="script_slot">
