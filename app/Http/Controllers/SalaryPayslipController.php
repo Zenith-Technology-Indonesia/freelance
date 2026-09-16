@@ -352,6 +352,17 @@ class SalaryPayslipController extends Controller
             ->whereIn('employee_id', $employeeActiveIds)
             ->get();
 
+        $employeeIdsWithPayslip = $employeePayslip->pluck('employee_id');
+        $employeeIdsMissingPayslip = $employeeActiveIds->diff($employeeIdsWithPayslip)->values();
+
+        $employeePayslipPrevious = EmployeePayslip::whereIn('employee_id', $employeeIdsMissingPayslip)
+            ->where('date_salary', '<', $firstDayOfMonth)
+            ->where('status', '<>', 'DELETED')
+            ->orderByDesc('date_salary')
+            ->get()
+            ->unique('employee_id')
+            ->values();
+
         $employeeAttendance = Attendance::select(
                 'employee_id',
                 DB::raw('count(*) as total_attendance')
@@ -388,6 +399,7 @@ class SalaryPayslipController extends Controller
                 'totalActiveDay' => $totalActiveDay,
                 'employeeSalary' => $employeeSalary,
                 'employeePayslip' => $employeePayslip,
+                'employeePayslipPrevious' => $employeePayslipPrevious,
                 'employeeAttendance' => $employeeAttendance,
                 'employeeAttendanceAbsent' => $employeeAttendanceAbsent,
             ],
@@ -433,6 +445,16 @@ class SalaryPayslipController extends Controller
             ->where('status','<>','DELETED')
         ->where('employee_id',$employeeId)->first();
 
+        $employeePayslipPrevious = null;
+
+        if (!$employeePayslip) {
+            $employeePayslipPrevious = EmployeePayslip::where('employee_id', $employeeId)
+                ->where('date_salary', '<', $firstDayOfMonth)
+                ->where('status', '<>', 'DELETED')
+                ->orderByDesc('date_salary')
+                ->first();
+        }
+
         $employeeAttendanceAll = Attendance::select('employee_id', DB::raw('count(*) as total_attendance'))
             ->where('date_attendance', '<=', $lastDayOfMonth)
             ->where('date_attendance', '>=', $firstDayOfMonth)
@@ -465,6 +487,7 @@ class SalaryPayslipController extends Controller
                     'employee'          => $employee,
                     'employeeSalary'    => $employeeSalary,
                     'employeePayslip'   => $employeePayslip,
+                    'employeePayslipPrevious'   => $employeePayslipPrevious,
                     'employeeAttendanceAll'     => $employeeAttendanceAll,
                     'employeeAttendanceAbsent'  => $employeeAttendanceAbsent,
                     'employeeAttendanceNotComplete'  => $employeeAttendanceNotComplete
