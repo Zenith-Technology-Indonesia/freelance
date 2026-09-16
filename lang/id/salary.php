@@ -10,6 +10,7 @@ return [
     'meal_day_short' => 'Hari UM',
     'basic_salary' => 'Gaji Pokok',
     'positional_allowance' => 'Tunj. Jabatan',
+    'transportation_allowance' => 'Tunjangan Transportasi',
     'bpjs_allowance' => 'Tunj. BPJS Kesehatan',
     'bpjs_tenaga_kerja_allowance' => 'Tunj. BPJS Ketenagakerjaan',
     'pension_allowance' => 'Tunj. Dana Pensiun',

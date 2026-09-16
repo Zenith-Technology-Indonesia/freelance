@@ -555,6 +555,18 @@
                                 </div>
 
                                 <div class="mb-3">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <label for="transportation_allowance" class="fs-14 text-secondary fw-normal">Tunjangan Transportasi</label>
+                                            <span class="fs-12 ms-2 info_transportation_allowance" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="0">
+                                                <i class="bi bi-info-circle"></i>
+                                            </span>
+                                            <input type="text" class="form-control border-0 fs-14" name="transportation_allowance" id="transportation_allowance">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
 
                                     <div class="row">
                                         <div class="col-6">

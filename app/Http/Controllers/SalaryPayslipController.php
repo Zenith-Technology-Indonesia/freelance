@@ -485,6 +485,7 @@ class SalaryPayslipController extends Controller
 
                 'basic_salary' => 'required|integer',
                 'positional_allowance' => 'required|integer',
+                'transportation_allowance' => 'required|integer',
                 'bpjs_allowance' => 'required|integer',
                 'bpjs_tenaga_kerja_allowance' => 'required|integer',
                 'pension_allowance' => 'required|integer',
@@ -544,6 +545,7 @@ class SalaryPayslipController extends Controller
 
             $salaryData['basic_salary'] = $request->basic_salary;
             $salaryData['positional_allowance'] = $request->positional_allowance;
+            $salaryData['transportation_allowance'] = $request->transportation_allowance;
             $salaryData['bpjs_allowance'] = $request->bpjs_allowance;
             $salaryData['bpjs_tenaga_kerja_allowance'] = $request->bpjs_tenaga_kerja_allowance;
             $salaryData['pension_allowance'] = $request->pension_allowance;
@@ -575,6 +577,7 @@ class SalaryPayslipController extends Controller
                 - intVal($employeeAttendanceNotComplete)
                 - $totalDeduction
                 + $request->positional_allowance
+                + $request->transportation_allowance
                 + $request->bpjs_allowance
                 + $request->bpjs_tenaga_kerja_allowance
                 + $request->pension_allowance
@@ -583,6 +586,7 @@ class SalaryPayslipController extends Controller
 
             $salaryData['prorate_basic_salary'] = $request->basic_salary;
             $salaryData['prorate_positional_allowance'] = $request->positional_allowance;
+            $salaryData['prorate_transportation_allowance'] = $request->transportation_allowance;
             $salaryData['prorate_bpjs_allowance'] = $request->bpjs_allowance;
             $salaryData['prorate_bpjs_tenaga_kerja_allowance'] = $request->bpjs_tenaga_kerja_allowance;
             $salaryData['prorate_pension_allowance'] = $request->pension_allowance;

@@ -375,7 +375,7 @@
 
                             <div class="custom-form-employee mb-3">
                                 @php
-                                    $thp = $employeeSalaries->basic_salary + $employeeSalaries->positional_allowance + $employeeSalaries->bpjs_allowance+ $employeeSalaries->bpjs_tenaga_kerja_allowance + $employeeSalaries->pension_allowance;                               
+                                    $thp = $employeeSalaries->basic_salary + $employeeSalaries->positional_allowance + $employeeSalaries->transportation_allowance + $employeeSalaries->bpjs_allowance+ $employeeSalaries->bpjs_tenaga_kerja_allowance + $employeeSalaries->pension_allowance;                               
                                 @endphp
                                 <div class="form-label">Take Home Pay THP</div>
                                 <div class="fs-14 text-thp">{{$thp}}</div>
@@ -399,6 +399,12 @@
                                 <div class="invalid-feedback">
                                     Please enter the Positional allowance
                                 </div>
+                            </div>
+
+                            <div class="custom-form-employee mb-3">
+                                <label for="transportation_allowance" class="form-label">Transportation Allowance</label>
+                                <input type="text" id="transportation_allowance" class="form-control input-text" value="0" required />
+                                <input type="number" name="transportation_allowance" class="d-none" value="0" required />
                             </div>
 
                             <div class="custom-form-employee mb-3">

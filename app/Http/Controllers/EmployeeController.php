@@ -564,6 +564,7 @@ class EmployeeController extends Controller
                     : 'belum kawin',
                 'basic_salary' => $request->basic_salary,
                 'positional_allowance' => $request->positional_allowance,
+                'transportation_allowance' => $request->transportation_allowance,
                 'bpjs_allowance' => $request->bpjs_allowance,
                 'no_bpjs' => $request->no_bpjs,
                 'no_bpjstk' => $request->no_bpjstk,
@@ -585,9 +586,10 @@ class EmployeeController extends Controller
                 'deleted_by' => null,
             ]);
 
-            $salaryData['take_home_pay'] = $request->basic_salary + $request->positional_allowance + $request->bpjs_allowance + $request->bpjs_tenaga_kerja_allowance + $request->pension_allowance;
+            $salaryData['take_home_pay'] = $request->basic_salary + $request->positional_allowance + $request->transportation_allowance + $request->bpjs_allowance + $request->bpjs_tenaga_kerja_allowance + $request->pension_allowance;
             $salaryData['basic_salary'] = $request->basic_salary;
             $salaryData['positional_allowance'] = $request->positional_allowance;
+            $salaryData['transportation_allowance'] = $request->transportation_allowance;
             $salaryData['bpjs_allowance'] = $request->bpjs_allowance;
             $salaryData['bpjs_tenaga_kerja_allowance'] = $request->bpjs_tenaga_kerja_allowance;
             $salaryData['pension_allowance'] = $request->pension_allowance;
@@ -947,6 +949,7 @@ class EmployeeController extends Controller
             $salaryFields = [
                 'basic_salary',
                 'positional_allowance',
+                'transportation_allowance',
                 'bpjs_allowance',
                 'bpjs_tenaga_kerja_allowance',
                 'pension_allowance',
@@ -960,14 +963,16 @@ class EmployeeController extends Controller
                 ]);
                 $basicSalary = $request->input('basic_salary', $employeeSalary->basic_salary ?? 0);
                 $positionalAllowance = $request->input('positional_allowance', $employeeSalary->positional_allowance ?? 0);
+                $transportationAllowance = $request->input('transportation_allowance', $employeeSalary->transportation_allowance ?? 0);
                 $bpjsAllowance = $request->input('bpjs_allowance', $employeeSalary->bpjs_allowance ?? 0);
                 $employmentBpjsAllowance = $request->input('bpjs_tenaga_kerja_allowance', $employeeSalary->bpjs_tenaga_kerja_allowance ?? 0);
                 $pensionAllowance = $request->input('pension_allowance', $employeeSalary->pension_allowance ?? 0);
 
                 $employeeSalary->fill([
-                    'take_home_pay' => $basicSalary + $positionalAllowance + $bpjsAllowance + $employmentBpjsAllowance + $pensionAllowance,
+                    'take_home_pay' => $basicSalary + $positionalAllowance + $transportationAllowance + $bpjsAllowance + $employmentBpjsAllowance + $pensionAllowance,
                     'basic_salary' => $basicSalary,
                     'positional_allowance' => $positionalAllowance,
+                    'transportation_allowance' => $transportationAllowance,
                     'bpjs_allowance' => $bpjsAllowance,
                     'bpjs_tenaga_kerja_allowance' => $employmentBpjsAllowance,
                     'pension_allowance' => $pensionAllowance,

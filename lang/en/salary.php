@@ -10,6 +10,7 @@ return [
     'meal_day_short' => 'Hari UM',
     'basic_salary' => 'Basic Salary',
     'positional_allowance' => 'Positional Allowance',
+    'transportation_allowance' => 'Transportation Allowance',
     'bpjs_allowance' => 'BPJS Allowance',
     'bpjs_tenaga_kerja_allowance' => 'BPJS Tenaga Kerja Allowance',
     'pension_allowance' => 'Pension Allowance',

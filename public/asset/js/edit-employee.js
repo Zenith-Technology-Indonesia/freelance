@@ -673,17 +673,18 @@ var dropdownLabel = function (key, fallback) {
     });
 });
 
-$("#basic_salary,#positional_allowance,#pension_allowance,#bpjs_allowance,#bpjs_tenaga_kerja_allowance").mask("000.000.000", { reverse: true });
+$("#basic_salary,#positional_allowance,#transportation_allowance,#pension_allowance,#bpjs_allowance,#bpjs_tenaga_kerja_allowance").mask("000.000.000", { reverse: true });
 $('[name="hid_thp"]').mask("000.000.000", { reverse: true });
 $(".text-thp").html($('[name="hid_thp"]').val());
 
 function setTHP() {
     var basicSalary = $('[name="basic_salary"]').val();
     var positionalAllowance = $('[name="positional_allowance"]').val();
-    var transportationAllowance = $('[name="pension_allowance"]').val();
-    var mealAllowance = $('[name="bpjs_allowance"]').val();
-    var internetPhoneAllowance = $('[name="bpjs_tenaga_kerja_allowance"]').val();
-    var thp = parseInt(basicSalary) + parseInt(positionalAllowance) + parseInt(transportationAllowance) + parseInt(mealAllowance) + parseInt(internetPhoneAllowance);
+    var transportationAllowance = $('[name="transportation_allowance"]').val();
+    var pensionAllowance = $('[name="pension_allowance"]').val();
+    var bpjsAllowance = $('[name="bpjs_allowance"]').val();
+    var bpjsTenagaKerjaAllowance = $('[name="bpjs_tenaga_kerja_allowance"]').val();
+    var thp = parseInt(basicSalary) + parseInt(positionalAllowance) + parseInt(transportationAllowance) + parseInt(pensionAllowance) + parseInt(bpjsAllowance) + parseInt(bpjsTenagaKerjaAllowance);
 
     $('[name="hid_thp"]').val(thp).unmask().mask("000.000.000", { reverse: true });
     $(".text-thp").html($('[name="hid_thp"]').val());
@@ -695,6 +696,10 @@ $("#basic_salary").on("keyup", function () {
 });
 $("#positional_allowance").on("keyup", function () {
     $('[name="positional_allowance"]').val($("#positional_allowance").cleanVal());
+    setTHP();
+});
+$("#transportation_allowance").on("keyup", function () {
+    $('[name="transportation_allowance"]').val($("#transportation_allowance").cleanVal());
     setTHP();
 });
 $("#pension_allowance").on("keyup", function () {

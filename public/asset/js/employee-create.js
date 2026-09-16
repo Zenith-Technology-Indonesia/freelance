@@ -558,17 +558,18 @@ $(function () {
     setupImageInput("photo", 'label[for="photo"]', "photoClearBtn");
     setupImageInput("ktp", 'label[for="ktp"]', "ktpClearBtn");
 
-    $("#basic_salary,#positional_allowance,#bpjs_allowance,#bpjs_tenaga_kerja_allowance,#pension_allowance").mask("000.000.000", { reverse: true });
+    $("#basic_salary,#positional_allowance,#transportation_allowance,#bpjs_allowance,#bpjs_tenaga_kerja_allowance,#pension_allowance").mask("000.000.000", { reverse: true });
     $('[name="hid_thp"]').mask("000.000.000", { reverse: true });
     $(".text-thp").html($('[name="hid_thp"]').val());
 
     function setTHP() {
         var basicSalary = $('[name="basic_salary"]').val();
         var positionalAllowance = $('[name="positional_allowance"]').val();
-        var transportationAllowance = $('[name="bpjs_allowance"]').val();
+        var transportationAllowance = $('[name="transportation_allowance"]').val();
+        var bpjsAllowance = $('[name="bpjs_allowance"]').val();
         var mealAllowance = $('[name="bpjs_tenaga_kerja_allowance"]').val();
         var internetPhoneAllowance = $('[name="pension_allowance"]').val();
-        var thp = parseInt(basicSalary) + parseInt(positionalAllowance) + parseInt(transportationAllowance) + parseInt(mealAllowance) + parseInt(internetPhoneAllowance);
+        var thp = parseInt(basicSalary) + parseInt(positionalAllowance) + parseInt(transportationAllowance) + parseInt(bpjsAllowance) + parseInt(mealAllowance) + parseInt(internetPhoneAllowance);
 
         $('[name="hid_thp"]').val(thp).unmask().mask("000.000.000", { reverse: true });
         $(".text-thp").html($('[name="hid_thp"]').val());
@@ -580,6 +581,10 @@ $(function () {
     });
     $("#positional_allowance").on("keyup", function () {
         $('[name="positional_allowance"]').val($("#positional_allowance").cleanVal());
+        setTHP();
+    });
+    $("#transportation_allowance").on("keyup", function () {
+        $('[name="transportation_allowance"]').val($("#transportation_allowance").cleanVal());
         setTHP();
     });
     $("#bpjs_allowance").on("keyup", function () {

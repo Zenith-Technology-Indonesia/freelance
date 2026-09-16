@@ -14,6 +14,7 @@ class EmployeeSalary extends Model
         'take_home_pay',
         'basic_salary',
         'positional_allowance',
+        'transportation_allowance',
         'bpjs_allowance',
         'bpjs_tenaga_kerja_allowance',
         'pension_allowance',

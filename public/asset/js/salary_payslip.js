@@ -458,6 +458,7 @@ async function getEmployeeSalaryPayslipDetail(employeeId,month,year)
             $('#modalSalaryEdit [name="basic_salary"]').val(employeeSalary.basic_salary);
 
             $('#modalSalaryEdit [name="positional_allowance"]').val(employeeSalary.positional_allowance);
+            $('#modalSalaryEdit [name="transportation_allowance"]').val(employeeSalary.transportation_allowance);
             $('#modalSalaryEdit [name="bpjs_allowance"]').val(employeeSalary.bpjs_allowance);
 
             $('#modalSalaryEdit [name="bpjs_tenaga_kerja_allowance"]').val(employeeSalary.bpjs_tenaga_kerja_allowance);
@@ -486,6 +487,7 @@ async function getEmployeeSalaryPayslipDetail(employeeId,month,year)
             
             $('#modalSalaryEdit .info_basic_salary').attr('data-bs-title','Rp '+parseInt(employeeSalary.basic_salary).toLocaleString('id-ID'));
             $('#modalSalaryEdit .info_positional_allowance').attr('data-bs-title','Rp '+parseInt(employeeSalary.positional_allowance).toLocaleString('id-ID'));
+            $('#modalSalaryEdit .info_transportation_allowance').attr('data-bs-title','Rp '+parseInt(employeeSalary.transportation_allowance).toLocaleString('id-ID'));
             
             $('#modalSalaryEdit .info_bpjs_allowance').attr('data-bs-title','Rp '+parseInt(employeeSalary.bpjs_allowance).toLocaleString('id-ID'));
             $('#modalSalaryEdit .info_bpjs_tenaga_kerja_allowance').attr('data-bs-title','Rp '+parseInt(employeeSalary.bpjs_tenaga_kerja_allowance).toLocaleString('id-ID'));
@@ -575,7 +577,7 @@ $('#modalSalaryEdit [name="thr"], #modalSalaryEdit [name="kompensasi_pkwt"], #mo
 });
 
 
-$('#modalSalaryEdit [name="active_day"], #modalSalaryEdit [name="working_day"], #modalSalaryEdit [name="meal_day"], #modalSalaryEdit [name="attendance_not_complete"], #modalSalaryEdit [name="basic_salary"], #modalSalaryEdit [name="positional_allowance"], #modalSalaryEdit [name="bpjs_allowance"], #modalSalaryEdit [name="bpjs_tenaga_kerja_allowance"], #modalSalaryEdit [name="pension_allowance"]').on('input change', function(){
+$('#modalSalaryEdit [name="active_day"], #modalSalaryEdit [name="working_day"], #modalSalaryEdit [name="meal_day"], #modalSalaryEdit [name="attendance_not_complete"], #modalSalaryEdit [name="basic_salary"], #modalSalaryEdit [name="positional_allowance"], #modalSalaryEdit [name="transportation_allowance"], #modalSalaryEdit [name="bpjs_allowance"], #modalSalaryEdit [name="bpjs_tenaga_kerja_allowance"], #modalSalaryEdit [name="pension_allowance"]').on('input change', function(){
     countSalary();
 });
 
@@ -584,6 +586,7 @@ function countSalary(){
     let totalWorkingDay = parseSalaryInput($('#modalSalaryEdit [name="working_day"]').val());
     let basicSalaryInput = parseSalaryInput($('#modalSalaryEdit [name="basic_salary"]').val());
     let positionalAllowanceInput = parseSalaryInput($('#modalSalaryEdit [name="positional_allowance"]').val());
+    let transportationAllowanceInput = parseSalaryInput($('#modalSalaryEdit [name="transportation_allowance"]').val());
     let bpjsAllowanceInput = parseSalaryInput($('#modalSalaryEdit [name="bpjs_allowance"]').val());
     let bpjsTenagaKerjaAllowanceInput = parseSalaryInput($('#modalSalaryEdit [name="bpjs_tenaga_kerja_allowance"]').val());
     let pensionAllowanceInput = parseSalaryInput($('#modalSalaryEdit [name="pension_allowance"]').val());
@@ -606,6 +609,7 @@ function countSalary(){
 
     let basicSalary = 0;
     let positionalAllowance = 0;
+    let transportationAllowance = 0;
     let bpjsAllowance = 0;
     let bpjsTenagaKerjaAllowance = 0;
     let pensionAllowance = 0;
@@ -620,6 +624,7 @@ function countSalary(){
 
         basicSalary = basicSalaryInput > 0 ? basicSalaryInput : parseSalaryInput(employeeSalary.basic_salary);
         positionalAllowance = positionalAllowanceInput > 0 ? positionalAllowanceInput : parseSalaryInput(employeeSalary.positional_allowance);
+        transportationAllowance = transportationAllowanceInput > 0 ? transportationAllowanceInput : parseSalaryInput(employeeSalary.transportation_allowance);
         bpjsAllowance = bpjsAllowanceInput > 0 ? bpjsAllowanceInput : parseSalaryInput(employeeSalary.bpjs_allowance);
         bpjsTenagaKerjaAllowance = bpjsTenagaKerjaAllowanceInput > 0 ? bpjsTenagaKerjaAllowanceInput : parseSalaryInput(employeeSalary.bpjs_tenaga_kerja_allowance);
         pensionAllowance = pensionAllowanceInput > 0 ? pensionAllowanceInput : parseSalaryInput(employeeSalary.pension_allowance);
@@ -629,13 +634,14 @@ function countSalary(){
 
         basicSalary = basicSalaryInput > 0 ? basicSalaryInput : parseSalaryInput(employeePayslip.basic_salary);
         positionalAllowance = positionalAllowanceInput > 0 ? positionalAllowanceInput : parseSalaryInput(employeePayslip.positional_allowance);
+        transportationAllowance = transportationAllowanceInput > 0 ? transportationAllowanceInput : parseSalaryInput(employeePayslip.transportation_allowance);
         bpjsAllowance = bpjsAllowanceInput > 0 ? bpjsAllowanceInput : parseSalaryInput(employeePayslip.bpjs_allowance);
         bpjsTenagaKerjaAllowance = bpjsTenagaKerjaAllowanceInput > 0 ? bpjsTenagaKerjaAllowanceInput : parseSalaryInput(employeePayslip.bpjs_tenaga_kerja_allowance);
         pensionAllowance = pensionAllowanceInput > 0 ? pensionAllowanceInput : parseSalaryInput(employeePayslip.pension_allowance);
 
     }
 
-    let thp = basicSalary - attendanceNotComplete - totalDeduction + positionalAllowance + bpjsAllowance + bpjsTenagaKerjaAllowance + pensionAllowance + kompensasiPkwt + thr;
+    let thp = basicSalary - attendanceNotComplete - totalDeduction + positionalAllowance + transportationAllowance + bpjsAllowance + bpjsTenagaKerjaAllowance + pensionAllowance + kompensasiPkwt + thr;
     
     $('#modalSalaryEdit .employee-salary-thp').text(formatRupiah(thp));
 }

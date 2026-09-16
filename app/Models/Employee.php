@@ -33,6 +33,7 @@ class Employee extends Model
         'bpjs_tenaga_kerja_allowance',
         'pension_allowance',
         'positional_allowance',
+        'transportation_allowance',
         'basic_salary',
         'address',
         'photo',
