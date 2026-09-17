@@ -149,14 +149,9 @@ class DocumentController extends Controller
                                 '=',
                                 'folder_creators.id'
                             )
-                            ->whereColumn(
-                                'folder_creators.id',
-                                'document_folders.created_by'
-                            )
-                            ->where(
-                                'folder_creator_employees.department_id',
-                                $departmentId
-                            )
+                            ->whereColumn('folder_creators.id', 'document_folders.created_by')
+                            ->whereColumn('folder_creator_employees.id', 'document_folders.employee_id')
+                            ->where('folder_creator_employees.department_id', $departmentId)
                             ->where(function ($adminRole) {
                                 $adminRole
                                     ->whereIn('folder_creators.user_type', ['ADMIN', 'ADMINISTRATOR'])
@@ -177,10 +172,9 @@ class DocumentController extends Controller
                                 'file_creators.id'
                             )
                             ->whereColumn('file_creators.id', 'documents.created_by')
-                            ->where(
-                                'file_creator_employees.department_id',
-                                $departmentId
-                            )
+                            // FIX: sama seperti di atas, hanya file milik akun admin itu sendiri
+                            ->whereColumn('file_creator_employees.id', 'documents.employee_id')
+                            ->where('file_creator_employees.department_id', $departmentId)
                             ->where(function ($adminRole) {
                                 $adminRole
                                     ->whereIn('file_creators.user_type', ['ADMIN', 'ADMINISTRATOR'])
