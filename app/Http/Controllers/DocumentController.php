@@ -55,6 +55,41 @@ class DocumentController extends Controller
         return $breadcrumb->values();
     }
 
+    private function findOrCreatePayslipFolder(
+        int $employeeId,
+        ?int $parentId,
+        string $name,
+        int $actorId,
+        array $legacyNames = [],
+        bool $isPrivate = false
+    ): DocumentFolders
+    {
+        $folder = DocumentFolders::where('employee_id', $employeeId)
+            ->where('parent_folder_id', $parentId)
+            ->whereIn('folder_name', array_values(array_unique(array_merge([$name], $legacyNames))))
+            ->first();
+
+        if ($folder) {
+            $folder->update([
+                'folder_name' => $name,
+                'is_private'  => $isPrivate,
+                'created_by'  => $actorId,
+                'updated_by'  => $actorId,
+            ]);
+
+            return $folder;
+        }
+
+        return DocumentFolders::create([
+            'employee_id'      => $employeeId,
+            'parent_folder_id' => $parentId,
+            'folder_name'      => $name,
+            'is_private'       => $isPrivate,
+            'created_by'       => $actorId,
+            'updated_by'       => $actorId,
+        ]);
+    }
+
     public function getAllFolder(Request $request)
     {
         $authUser = Auth::user();
@@ -123,10 +158,6 @@ class DocumentController extends Controller
             $fileQuery->where('documents.folder_id', $parentId);
         }
 
-        // Access rules:
-        // - SUPERADMIN: see all folders/files
-        // - ADMINISTRATOR: see folders/files owned by employees in same department
-        // - REGULAR: only own folders/files
         if ($isSuperadmin) {
             if ($departmentFilter && $departmentFilter !== 'all') {
                 $query->where('doc_employees.department_id', $departmentFilter);
@@ -138,50 +169,51 @@ class DocumentController extends Controller
         } else {
             $departmentId = (int) $currentEmployee->department_id;
 
-            $query->where(function ($scope) use ($employeeId, $departmentId) {
-                $scope->where('document_folders.employee_id', $employeeId)
-                    ->orWhereExists(function ($adminFolder) use ($departmentId) {
-                        $adminFolder->selectRaw('1')
-                            ->from('users as folder_creators')
-                            ->join(
-                                'employees as folder_creator_employees',
-                                'folder_creator_employees.user_id',
-                                '=',
-                                'folder_creators.id'
-                            )
-                            ->whereColumn('folder_creators.id', 'document_folders.created_by')
-                            ->whereColumn('folder_creator_employees.id', 'document_folders.employee_id')
-                            ->where('folder_creator_employees.department_id', $departmentId)
-                            ->where(function ($adminRole) {
-                                $adminRole
-                                    ->whereIn('folder_creators.user_type', ['ADMIN', 'ADMINISTRATOR'])
-                                    ->orWhereIn('folder_creators.user_role', ['ADMIN', 'ADMINISTRATOR']);
-                            });
-                    });
-            });
+            $query->where('document_folders.is_private', false)
+                ->where(function ($scope) use ($employeeId, $departmentId) {
+                    $scope->where('document_folders.employee_id', $employeeId)
+                        ->orWhereExists(function ($adminFolder) use ($departmentId) {
+                            $adminFolder->selectRaw('1')
+                                ->from('users as folder_creators')
+                                ->join(
+                                    'employees as folder_creator_employees',
+                                    'folder_creator_employees.user_id',
+                                    '=',
+                                    'folder_creators.id'
+                                )
+                                ->whereColumn('folder_creators.id', 'document_folders.created_by')
+                                ->whereColumn('folder_creator_employees.id', 'document_folders.employee_id')
+                                ->where('folder_creator_employees.department_id', $departmentId)
+                                ->where(function ($adminRole) {
+                                    $adminRole
+                                        ->whereIn('folder_creators.user_type', ['ADMIN', 'ADMINISTRATOR'])
+                                        ->orWhereIn('folder_creators.user_role', ['ADMIN', 'ADMINISTRATOR']);
+                                });
+                        });
+                });
 
-            $fileQuery->where(function ($scope) use ($employeeId, $departmentId) {
-                $scope->where('documents.employee_id', $employeeId)
-                    ->orWhereExists(function ($adminFile) use ($departmentId) {
-                        $adminFile->selectRaw('1')
-                            ->from('users as file_creators')
-                            ->join(
-                                'employees as file_creator_employees',
-                                'file_creator_employees.user_id',
-                                '=',
-                                'file_creators.id'
-                            )
-                            ->whereColumn('file_creators.id', 'documents.created_by')
-                            // FIX: sama seperti di atas, hanya file milik akun admin itu sendiri
-                            ->whereColumn('file_creator_employees.id', 'documents.employee_id')
-                            ->where('file_creator_employees.department_id', $departmentId)
-                            ->where(function ($adminRole) {
-                                $adminRole
-                                    ->whereIn('file_creators.user_type', ['ADMIN', 'ADMINISTRATOR'])
-                                    ->orWhereIn('file_creators.user_role', ['ADMIN', 'ADMINISTRATOR']);
-                            });
-                    });
-            });
+            $fileQuery->where('documents.is_private', false)
+                ->where(function ($scope) use ($employeeId, $departmentId) {
+                    $scope->where('documents.employee_id', $employeeId)
+                        ->orWhereExists(function ($adminFile) use ($departmentId) {
+                            $adminFile->selectRaw('1')
+                                ->from('users as file_creators')
+                                ->join(
+                                    'employees as file_creator_employees',
+                                    'file_creator_employees.user_id',
+                                    '=',
+                                    'file_creators.id'
+                                )
+                                ->whereColumn('file_creators.id', 'documents.created_by')
+                                ->whereColumn('file_creator_employees.id', 'documents.employee_id')
+                                ->where('file_creator_employees.department_id', $departmentId)
+                                ->where(function ($adminRole) {
+                                    $adminRole
+                                        ->whereIn('file_creators.user_type', ['ADMIN', 'ADMINISTRATOR'])
+                                        ->orWhereIn('file_creators.user_role', ['ADMIN', 'ADMINISTRATOR']);
+                                });
+                        });
+                });
         }
 
         if ($divisionFilter && $divisionFilter !== 'all') {
