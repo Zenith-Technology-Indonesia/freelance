@@ -99,6 +99,10 @@ class AttendanceController extends Controller
 
     private function validateAttendanceDistanceRule(Employee $employee, float $latitude, float $longitude, int $existingCheckinCount): void
     {
+        if ($this->isDistanceExemptEmployee($employee)) {
+            return;
+        }
+
         $rule = $this->resolveAttendanceDistanceRule($employee);
         if ($rule === null) {
             return;
@@ -122,6 +126,10 @@ class AttendanceController extends Controller
 
     private function validateCheckoutDistanceRule(Employee $employee, float $latitude, float $longitude): void
     {
+        if ($this->isDistanceExemptEmployee($employee)) {
+            return;
+        }
+
         $rule = $this->resolveAttendanceDistanceRule($employee);
         if ($rule === null) {
             return;
@@ -149,7 +157,19 @@ class AttendanceController extends Controller
         return strtoupper(trim((string) optional($employee->job)->job_name)) === 'TENAGA KEAMANAN';
     }
 
+    private function isDistanceExemptEmployee(Employee $employee): bool
+    {
+        $exemptedNames = [
+            'HERDI WIBOWO',
+            "NURALIM MA'MUN",
+            'RIAN RIFAI',
+            'ARGO NURCAHYO',
+        ];
 
+        $employeeName = strtoupper(trim((string) $employee->name));
+
+        return in_array($employeeName, $exemptedNames, true);
+    }
 
     public function showAttendancePage()
     {
