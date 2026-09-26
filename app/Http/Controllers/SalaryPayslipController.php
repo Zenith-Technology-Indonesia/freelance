@@ -35,6 +35,47 @@ class SalaryPayslipController extends Controller
     private const EXCLUDED_SALARY_PAYSLIP_USER_ROLES = ['ADMINISTRATOR', 'SUPERADMIN', 'ADMIN'];
     private const EXCLUDED_SALARY_PAYSLIP_USER_TYPES = ['ADMINISTRATOR', 'SUPERADMIN', 'ADMIN'];
 
+    /** Numeric form fields must never remain NULL on a payslip that is sent. */
+    private const PAYSLIP_NUMERIC_FIELDS = [
+        'total_day_active',
+        'total_working_day',
+        'total_working_day_meal',
+        'attendance_incomplete',
+        'take_home_pay',
+        'basic_salary',
+        'positional_allowance',
+        'transportation_allowance',
+        'bpjs_allowance',
+        'bpjs_tenaga_kerja_allowance',
+        'pension_allowance',
+        'prorate_basic_salary',
+        'prorate_positional_allowance',
+        'prorate_transportation_allowance',
+        'prorate_bpjs_allowance',
+        'prorate_bpjs_tenaga_kerja_allowance',
+        'prorate_pension_allowance',
+        'thr',
+        'kompensasi_pkwt',
+        'deduction',
+        'deduction_absent',
+        'deduction_late',
+        'deduction_bpjs_kesehatan',
+        'deduction_bpjs_tenaga_kerja',
+        'deduction_bpjs_dana_pensiun',
+        'deduction_pph21',
+        'deduction_cooperative',
+        'deduction_other',
+    ];
+
+    private function fillBlankPayslipValuesWithZero(EmployeePayslip $payslip): void
+    {
+        foreach (self::PAYSLIP_NUMERIC_FIELDS as $field) {
+            if ($payslip->getAttribute($field) === null || $payslip->getAttribute($field) === '') {
+                $payslip->setAttribute($field, 0);
+            }
+        }
+    }
+
     private function getSalaryPayslipEmployeeIds()
     {
         $employeeActiveIds = EmployeeHelper::EmployeeActiveIds();
@@ -757,6 +798,7 @@ class SalaryPayslipController extends Controller
                 throw new \Exception('Employee Payslip not generate');
             }
 
+            $this->fillBlankPayslipValuesWithZero($employeePayslip);
             $employeePayslip->date_payslip_send = DB::raw('now()');
             $employeePayslip->status = 'PAYSLIP_SENT';
             $employeePayslip->updated_by = $userId;
@@ -820,8 +862,6 @@ class SalaryPayslipController extends Controller
             ->whereIn('employee_id', $employeeIds)
             ->where('date_salary', $dateSalary)
             ->where('status', '<>', 'DELETED')
-            ->where('basic_salary', '>', 0)
-            ->where('take_home_pay', '>', 0)
             ->get();
 
         if ($payslips->isEmpty()) {
@@ -841,11 +881,7 @@ class SalaryPayslipController extends Controller
 
         DB::transaction(function () use ($payslips, $dateSalary, $userId, $archiveOwnerId, $validated, &$savedCount) {
             foreach ($payslips as $payslip) {
-                // Older salary records may have a NULL value. A blank attendance
-                // incomplete deduction must always be treated as zero when sent.
-                if ($payslip->attendance_incomplete === null) {
-                    $payslip->attendance_incomplete = 0;
-                }
+                $this->fillBlankPayslipValuesWithZero($payslip);
                 $payslip->date_payslip_send = now();
                 $payslip->status = 'PAYSLIP_SENT';
                 $payslip->updated_by = $userId;
