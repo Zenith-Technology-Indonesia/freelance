@@ -125,6 +125,35 @@
                 </div>
             </div>
         </div>
+
+        <div class="modal fade" id="deleteUserModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+            aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content modal-content-custom">
+                    <div class="modal-header modal-header-custom">
+                        <h5 class="modal-title modal-title-custom" id="deleteUserModalLabel">Delete User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body modal-body-custom">
+                        <p class="mb-2">Apakah Anda yakin ingin menghapus akun ini?</p>
+                        <div class="delete-user-summary">
+                            <span class="material-symbols-outlined" aria-hidden="true">person</span>
+                            <div>
+                                <div class="fw-semibold" id="deleteUserName"></div>
+                                <div class="text-muted small" id="deleteUserEmail"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-custom">
+                        <button type="button" class="btn-cancel-password" data-bs-dismiss="modal">{{ __('general.cancel') }}</button>
+                        <button type="button" class="btn-submit-black btn-delete-user-confirm" id="confirmDeleteUser">
+                            <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                            <span>Hapus</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <x-slot name="script_slot">

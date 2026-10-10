@@ -179,7 +179,31 @@ class UserController extends Controller
 
     public function destroy(string $id)
     {
-        //
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        if (in_array(strtoupper((string) $user->user_type), ['SUPERADMIN', 'ADMINISTRATOR'], true)
+            || in_array(strtoupper((string) $user->user_role), ['SUPERADMIN', 'ADMINISTRATOR'], true)) {
+            return response()->json(['message' => 'Administrator accounts cannot be deleted here.'], 403);
+        }
+
+        if ((int) auth()->id() === (int) $user->id) {
+            return response()->json(['message' => 'You cannot delete your own account.'], 403);
+        }
+
+        try {
+            \DB::transaction(function () use ($user) {
+                Employee::where('user_id', $user->id)->update(['user_id' => null]);
+                $user->delete();
+            });
+        } catch (\Throwable $exception) {
+            \Log::error('Failed to delete user account.', ['user_id' => $user->id, 'exception' => $exception]);
+            return response()->json(['message' => 'User could not be deleted.'], 500);
+        }
+
+        return response()->json(['message' => 'User deleted successfully.']);
     }
 
     public function getUsersAjax(Request $request)

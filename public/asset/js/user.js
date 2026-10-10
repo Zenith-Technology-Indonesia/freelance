@@ -155,6 +155,12 @@ document.addEventListener("DOMContentLoaded", function () {
                             title="Change Password" aria-label="Change Password">
                             <span class="material-symbols-outlined icon">lock</span>
                         </button>
+                        <button type="button" class="btn-icon-toggle btn-delete-user" data-id="${user.id}"
+                            data-name="${String(user.name || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"
+                            data-email="${String(user.email || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"
+                            title="Hapus User" aria-label="Hapus User">
+                            <span class="material-symbols-outlined icon">delete</span>
+                        </button>
                     </td>
                 </tr>
             `;
@@ -248,6 +254,42 @@ document.addEventListener("DOMContentLoaded", function () {
         $("#changePasswordUserId").val($(this).data("id"));
         $("#changePasswordUserName").text($(this).data("name"));
         $("#changePasswordModal").modal("show");
+    });
+
+    $(document).on("click", ".btn-delete-user", function () {
+        const $button = $(this);
+        const $confirm = $("#confirmDeleteUser");
+        $confirm.data("id", $button.data("id"));
+        $("#deleteUserName").text($button.data("name"));
+        $("#deleteUserEmail").text($button.data("email"));
+        $confirm.prop("disabled", false).find("span:last").text("Hapus");
+        $("#deleteUserModal").modal("show");
+    });
+
+    $("#confirmDeleteUser").on("click", function () {
+        const $button = $(this);
+        const id = $button.data("id");
+        if (!id) return;
+
+        $.ajax({
+            url: appUrl + `/user/${id}`,
+            type: "DELETE",
+            headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
+            beforeSend: function () {
+                $button.prop("disabled", true).find("span:last").text("Menghapus...");
+            },
+            success: function (response) {
+                $("#deleteUserModal").modal("hide");
+                showFloatingAlert(response.message || "User berhasil dihapus.", "success", 3000);
+                fetchUsers(currentSearch, currentPage);
+            },
+            error: function (xhr) {
+                showFloatingAlert(xhr.responseJSON?.message || "Gagal menghapus user.", "warning", 4000);
+            },
+            complete: function () {
+                $button.prop("disabled", false).find("span:last").text("Hapus");
+            }
+        });
     });
 
     $("#changePasswordForm").on("submit", function (event) {
