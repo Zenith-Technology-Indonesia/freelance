@@ -98,8 +98,13 @@
                 </div>
                 <form id="addJobForm" class="form-custom needs-validation" novalidate>
                     <div class="mb-3 mt-4 custom-input">
-                        <label for="department_id" class="form-label label-custom">Partner</label>
-                        <select id="department_id" name="department_id" class="form-select input-select"
+                        <label for="business_department_id" class="form-label label-custom">Department</label>
+                        <select id="business_department_id" name="business_department_id" class="form-select input-select"
+                            required></select>
+                    </div>
+                    <div class="mb-3 custom-input">
+                        <label for="partner_id" class="form-label label-custom">Partner</label>
+                        <select id="partner_id" name="partner_id" class="form-select input-select"
                             required></select>
                     </div>
                     <div class="mb-3 custom-input">
@@ -148,8 +153,13 @@
                 <form id="editJobForm" class="form-custom needs-validation" novalidate>
                     <input type="hidden" id="edit_job_id" name="edit_job_id">
                     <div class="mb-3 mt-4 custom-input">
-                        <label for="edit_department_id" class="form-label label-custom">Partner</label>
-                        <select id="edit_department_id" name="edit_department_id" class="form-select input-select"
+                        <label for="edit_business_department_id" class="form-label label-custom">Department</label>
+                        <select id="edit_business_department_id" name="business_department_id" class="form-select input-select"
+                            required></select>
+                    </div>
+                    <div class="mb-3 custom-input">
+                        <label for="edit_partner_id" class="form-label label-custom">Partner</label>
+                        <select id="edit_partner_id" name="partner_id" class="form-select input-select"
                             required></select>
                     </div>
                     <div class="mb-3 custom-input">

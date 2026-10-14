@@ -97,8 +97,18 @@
                     enctype="multipart/form-data">
                     <div class="modal-body modal-body-custom">
                         <div class="mb-3 mt-4 custom-input">
-                            <label for="department_id" class="form-label label-custom">Partner</label>
-                            <select class="form-select input-select" id="department_id" name="department_id"
+                            <label for="business_department_id" class="form-label label-custom">Department</label>
+                            <select class="form-select input-select" id="business_department_id" name="business_department_id"
+                                required>
+                                <option value="" disabled selected>{{ __('general.select_department') }}</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a department.
+                            </div>
+                        </div>
+                        <div class="mb-3 custom-input">
+                            <label for="partner_id" class="form-label label-custom">Partner</label>
+                            <select class="form-select input-select" id="partner_id" name="partner_id"
                                 required>
                                 <option value="" disabled selected>{{ __('general.select_partner') }}</option>
                             </select>
@@ -174,8 +184,18 @@
                     <div class="modal-body modal-body-custom">
                         <input type="hidden" id="edit_division_id" name="division_id">
                         <div class="mb-3 mt-4 custom-input">
-                            <label for="edit_department_id" class="form-label label-custom">Partner</label>
-                            <select class="form-select input-select" id="edit_department_id" name="department_id"
+                            <label for="edit_business_department_id" class="form-label label-custom">Department</label>
+                            <select class="form-select input-select" id="edit_business_department_id" name="business_department_id"
+                                required>
+                                <option value="" disabled selected>{{ __('general.select_department') }}</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a department.
+                            </div>
+                        </div>
+                        <div class="mb-3 custom-input">
+                            <label for="edit_partner_id" class="form-label label-custom">Partner</label>
+                            <select class="form-select input-select" id="edit_partner_id" name="partner_id"
                                 required>
                                 <option value="" disabled selected>{{ __('general.select_partner') }}</option>
                             </select>

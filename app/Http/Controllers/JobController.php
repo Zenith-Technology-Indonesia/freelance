@@ -81,6 +81,7 @@ class JobController extends Controller
             $validator = Validator::make($request->all(), [
                 'partner_id' => 'nullable|exists:partners,id',
                 'department_id' => 'nullable|exists:partners,id',
+                'business_department_id' => 'nullable|exists:departments,id',
                 'division_id' => 'required|exists:divisions,id',
                 'job_name' => 'required|string|max:255',
                 'status' => 'required|string|in:ACTIVE,INACTIVE,DELETED',
@@ -106,6 +107,12 @@ class JobController extends Controller
             $partner = Partner::find($partnerId);
             if (!$partner) {
                 throw new \Exception('Partner not found');
+            }
+            if (
+                $request->filled('business_department_id')
+                && (int) $partner->department_id !== (int) $request->input('business_department_id')
+            ) {
+                throw new \Exception('Partner does not belong to selected department');
             }
 
             if ($division && (int) $division->partner_id !== (int) $partner->id) {
@@ -162,6 +169,7 @@ class JobController extends Controller
             $validator = Validator::make($request->all(), [
                 'partner_id' => 'nullable|exists:partners,id',
                 'department_id' => 'nullable|exists:partners,id',
+                'business_department_id' => 'nullable|exists:departments,id',
                 'division_id' => 'sometimes|exists:divisions,id',
                 'job_name' => 'sometimes|string|max:255',
                 'status' => 'sometimes|string|in:ACTIVE,INACTIVE,DELETED',
@@ -187,6 +195,12 @@ class JobController extends Controller
                 $partner = Partner::find($partnerId);
                 if (!$partner) {
                     throw new \Exception('Partner not found');
+                }
+                if (
+                    $request->filled('business_department_id')
+                    && (int) $partner->department_id !== (int) $request->input('business_department_id')
+                ) {
+                    throw new \Exception('Partner does not belong to selected department');
                 }
                 if ($division && (int) $division->partner_id !== (int) $partner->id) {
                     throw new \Exception('Division does not belong to selected partner');

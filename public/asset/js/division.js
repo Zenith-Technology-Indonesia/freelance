@@ -139,11 +139,56 @@ $(document).ready(function () {
                         department.name_department +
                         "</option>";
                 });
-                $("#department_id").html(options);
-                $("#edit_department_id").html(options);
+                $("#business_department_id").html(options);
+                $("#edit_business_department_id").html(options);
                 if (callback && typeof callback === "function") {
                     callback();
                 }
+            },
+            error: function () {
+                var errorOption =
+                    '<option value="" disabled selected>Failed to load departments</option>';
+                $("#business_department_id, #edit_business_department_id").html(errorOption);
+            },
+        });
+    }
+
+    function loadPartnersDropdown(businessDepartmentId, selectedId, selector, callback) {
+        var selectPartner =
+            '<option value="" disabled selected>' + ((window.dropdownTranslations || {}).select_partner || 'Select Partner') + '</option>';
+        if (!businessDepartmentId) {
+            $(selector).html(selectPartner);
+            return;
+        }
+
+        $.ajax({
+            url: appUrl + "/partner/index",
+            type: "GET",
+            data: { department_id: businessDepartmentId },
+            success: function (response) {
+                var options = selectPartner;
+                $.each(response.data || [], function (index, partner) {
+                    options +=
+                        '<option value="' +
+                        partner.id +
+                        '"' +
+                        (selectedId == partner.id ? " selected" : "") +
+                        ">" +
+                        partner.partner_name +
+                        "</option>";
+                });
+                $(selector).html(options);
+                if (selectedId) {
+                    $(selector).val(selectedId);
+                }
+                if (typeof callback === "function") {
+                    callback();
+                }
+            },
+            error: function () {
+                $(selector).html(
+                    '<option value="" disabled selected>Failed to load partners</option>'
+                );
             },
         });
     }
@@ -191,7 +236,10 @@ $(document).ready(function () {
         var form = $("#addDivisionForm")[0];
         form.reset();
         $(form).removeClass("was-validated");
-        $("#department_id").removeClass("is-valid is-invalid");
+        $("#business_department_id, #partner_id").removeClass("is-valid is-invalid");
+        $("#partner_id").html(
+            '<option value="" disabled selected>' + ((window.dropdownTranslations || {}).select_partner || 'Select Partner') + '</option>'
+        );
         $("#name_division").removeClass("is-valid is-invalid");
         $("#status").removeClass("is-valid is-invalid");
         $("#description").removeClass("is-valid is-invalid");
@@ -201,7 +249,7 @@ $(document).ready(function () {
         addDivisionModal.show();
     });
 
-    $("#department_id, #name_division, #description, #status, #image").on(
+    $("#business_department_id, #partner_id, #name_division, #description, #status, #image").on(
         "input change",
         function () {
             var input = $(this)[0];
@@ -269,7 +317,7 @@ $(document).ready(function () {
     });
 
     $(
-        "#edit_department_id, #edit_name_division, #edit_description, #edit_status"
+        "#edit_business_department_id, #edit_partner_id, #edit_name_division, #edit_description, #edit_status"
     ).on("input change", function () {
         var input = $(this)[0];
         if (input.checkValidity()) {
@@ -295,6 +343,18 @@ $(document).ready(function () {
         } else {
             $("#editImageLabel").css("opacity", "1");
         }
+    });
+
+    $("#business_department_id").on("change", function () {
+        loadPartnersDropdown($(this).val(), null, "#partner_id");
+    });
+
+    $("#edit_business_department_id").on("change", function () {
+        loadPartnersDropdown($(this).val(), null, "#edit_partner_id");
+    });
+
+    $("#partner_id, #edit_partner_id").on("change", function () {
+        $(this).removeClass("is-invalid").addClass("is-valid");
     });
 
     $("#edit_image").change(function () {
@@ -448,7 +508,12 @@ $(document).ready(function () {
                     }
 
                     $("#edit_division_id").val(division.id);
-                    $("#edit_department_id").val(division.department_id);
+                    $("#edit_business_department_id").val(division.business_department_id);
+                    loadPartnersDropdown(
+                        division.business_department_id,
+                        division.partner_id,
+                        "#edit_partner_id"
+                    );
                     $("#edit_name_division").val(division.name_division);
                     $("#edit_status").val(division.status);
                     $("#edit_description").val(division.description || '');

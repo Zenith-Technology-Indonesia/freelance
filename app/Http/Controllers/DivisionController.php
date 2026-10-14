@@ -86,6 +86,7 @@ class DivisionController extends Controller
             $validator = Validator::make($request->all(), [
                 'partner_id' => 'nullable|exists:partners,id',
                 'department_id' => 'nullable|exists:partners,id',
+                'business_department_id' => 'nullable|exists:departments,id',
                 'name_division' => 'required|string|max:255',
                 'status' => 'required|string|in:ACTIVE,INACTIVE',
                 'description' => 'nullable|string',
@@ -104,6 +105,12 @@ class DivisionController extends Controller
             $partner = Partner::find($partnerId);
             if (!$partner) {
                 throw new \Exception('Partner not found');
+            }
+            if (
+                $request->filled('business_department_id')
+                && (int) $partner->department_id !== (int) $request->input('business_department_id')
+            ) {
+                throw new \Exception('Partner does not belong to selected department');
             }
 
             $imageName = null;
@@ -199,6 +206,7 @@ class DivisionController extends Controller
             $validator = Validator::make($request->all(), [
                 'partner_id' => 'nullable|exists:partners,id',
                 'department_id' => 'nullable|exists:partners,id',
+                'business_department_id' => 'nullable|exists:departments,id',
                 'name_division' => 'required|string|max:255',
                 'status' => 'required|string|in:ACTIVE,INACTIVE',
                 'description' => 'nullable|string',
@@ -217,6 +225,12 @@ class DivisionController extends Controller
             $partner = Partner::find($partnerId);
             if (!$partner) {
                 throw new \Exception('Partner not found');
+            }
+            if (
+                $request->filled('business_department_id')
+                && (int) $partner->department_id !== (int) $request->input('business_department_id')
+            ) {
+                throw new \Exception('Partner does not belong to selected department');
             }
 
             $updateData = [

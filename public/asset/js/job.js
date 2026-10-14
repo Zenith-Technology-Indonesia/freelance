@@ -47,7 +47,7 @@ function showLoader(modalType, show = true) {
 
 function loadDepartmentsDropdown(
     selectedId = null,
-    selector = "#department_id",
+    selector = "#business_department_id",
     callback = null
 ) {
     $.ajax({
@@ -75,15 +75,66 @@ function loadDepartmentsDropdown(
                 callback();
             }
         },
+        error: function () {
+            $(selector).html(
+                '<option value="" disabled selected>Failed to load departments</option>'
+            );
+        },
+    });
+}
+
+function loadPartnersDropdown(
+    businessDepartmentId,
+    selectedId = null,
+    selector = "#partner_id",
+    callback = null
+) {
+    if (!businessDepartmentId) {
+        $(selector).html(
+            '<option value="" disabled selected>' + (jobDropdownText.select_partner || 'Select Partner') + '</option>'
+        );
+        return;
+    }
+
+    $.ajax({
+        url: appUrl + "/partner/index",
+        type: "GET",
+        data: { department_id: businessDepartmentId },
+        success: function (response) {
+            var options =
+                '<option value="" disabled selected>' + (jobDropdownText.select_partner || 'Select Partner') + '</option>';
+            $.each(response.data || [], function (index, partner) {
+                options +=
+                    '<option value="' +
+                    partner.id +
+                    '"' +
+                    (selectedId == partner.id ? " selected" : "") +
+                    ">" +
+                    partner.partner_name +
+                    "</option>";
+            });
+            $(selector).html(options);
+            if (selectedId) {
+                $(selector).val(selectedId);
+            }
+            if (typeof callback === "function") {
+                callback();
+            }
+        },
+        error: function () {
+            $(selector).html(
+                '<option value="" disabled selected>Failed to load partners</option>'
+            );
+        },
     });
 }
 
 function loadDivisionsDropdown(
-    departmentId,
+    partnerId,
     selectedId = null,
     selector = "#division_id"
 ) {
-    if (!departmentId) {
+    if (!partnerId) {
         $(selector).html(
             '<option value="" disabled selected>' + (jobDropdownText.select_site || 'Select Site') + '</option>'
         );
@@ -92,7 +143,7 @@ function loadDivisionsDropdown(
     $.ajax({
         url: appUrl + "/division/index",
         type: "GET",
-        data: { department_id: departmentId },
+        data: { partner_id: partnerId },
         success: function (response) {
             var divisions = response.data;
             var options =
@@ -150,10 +201,17 @@ function loadFilterOptions(
     });
 }
 
-// Change event handler to use event delegation for dynamic elements
-$(document).on("change", "#department_id", function () {
-    var departmentId = $(this).val();
-    loadDivisionsDropdown(departmentId);
+$(document).on("change", "#business_department_id, #edit_business_department_id", function () {
+    var isEdit = this.id === "edit_business_department_id";
+    var partnerSelector = isEdit ? "#edit_partner_id" : "#partner_id";
+    var divisionSelector = isEdit ? "#edit_division_id" : "#division_id";
+    loadPartnersDropdown($(this).val(), null, partnerSelector);
+    loadDivisionsDropdown(null, null, divisionSelector);
+});
+
+$(document).on("change", "#partner_id, #edit_partner_id", function () {
+    var divisionSelector = this.id === "edit_partner_id" ? "#edit_division_id" : "#division_id";
+    loadDivisionsDropdown($(this).val(), null, divisionSelector);
 });
 
 // Fungsi untuk load division pada filter sesuai department
@@ -387,15 +445,18 @@ $(document).ready(function () {
         form.reset();
         $(form).removeClass("was-validated");
         $(
-            "#department_id, #division_id, #job_name, #status, #description"
+            "#business_department_id, #partner_id, #division_id, #job_name, #status, #description"
         ).removeClass("is-valid is-invalid");
     }
 
     $("#btnAddData").on("click", function () {
         resetAddJobForm();
-        loadDepartmentsDropdown(null, "#department_id", function () {
+        loadDepartmentsDropdown(null, "#business_department_id", function () {
             // Keep the default "Select Department" option selected (disabled and selected)
-            $("#department_id").val("");
+            $("#business_department_id").val("");
+            $("#partner_id").html(
+                '<option value="" disabled selected>' + (jobDropdownText.select_partner || 'Select Partner') + '</option>'
+            );
             // Reset division dropdown to default
             $("#division_id").html(
                 '<option value="" disabled selected>' + (jobDropdownText.select_site || 'Select Site') + '</option>'
@@ -406,7 +467,7 @@ $(document).ready(function () {
 
     $("#editJobModal").on("show.bs.modal", function () {
         $(
-            "#edit_department_id, #edit_division_id, #edit_job_name, #edit_status, #edit_description"
+            "#edit_business_department_id, #edit_partner_id, #edit_division_id, #edit_job_name, #edit_status, #edit_description"
         ).removeClass("is-valid is-invalid");
         $("#editModalLoader").addClass("d-none");
     });
@@ -456,7 +517,8 @@ $(document).ready(function () {
         showLoader("add", true);
 
         var formData = {
-            department_id: $("#department_id").val(),
+            business_department_id: $("#business_department_id").val(),
+            partner_id: $("#partner_id").val(),
             division_id: $("#division_id").val(),
             job_name: $("#job_name").val(),
             status: $("#status").val(),
@@ -514,7 +576,8 @@ $(document).ready(function () {
 
         var jobId = $("#edit_job_id").val();
         var formData = {
-            department_id: $("#edit_department_id").val(),
+            business_department_id: $("#edit_business_department_id").val(),
+            partner_id: $("#edit_partner_id").val(),
             division_id: $("#edit_division_id").val(),
             job_name: $("#edit_job_name").val(),
             status: $("#edit_status").val(),
@@ -575,9 +638,16 @@ $(document).ready(function () {
                 $("#edit_status").val(job.status);
                 $("#edit_description").val(job.description || "");
 
-                // Load department dan division yang sesuai
-                loadDepartmentsDropdown(job.department_id, "#edit_department_id", function () {
-                    loadDivisionsDropdown(job.department_id, job.division_id, "#edit_division_id");
+                // Load department, partner, and site selections in dependency order.
+                loadDepartmentsDropdown(job.business_department_id, "#edit_business_department_id", function () {
+                    loadPartnersDropdown(
+                        job.business_department_id,
+                        job.partner_id,
+                        "#edit_partner_id",
+                        function () {
+                            loadDivisionsDropdown(job.partner_id, job.division_id, "#edit_division_id");
+                        }
+                    );
                 });
 
                 editJobModal.show();
@@ -637,10 +707,4 @@ $(document).ready(function () {
             },
         });
     });
-});
-
-// Change event handler to use event delegation for dynamic elements
-$(document).on("change", "#department_id", function () {
-    var departmentId = $(this).val();
-    loadDivisionsDropdown(departmentId);
 });
