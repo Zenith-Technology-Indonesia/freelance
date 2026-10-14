@@ -140,13 +140,17 @@ $(document).ready(function () {
             return;
         }
 
+        $(selector).html(
+            '<option value="" disabled selected>' + ((window.dropdownTranslations || {}).loading || 'Loading...') + '</option>'
+        );
         $.ajax({
             url: appUrl + "/partner/dropdown",
             type: "GET",
             data: { business_department_id: businessDepartmentId },
             success: function (response) {
                 var options = selectPartner;
-                $.each(response.data || [], function (index, partner) {
+                var partners = response.data || [];
+                $.each(partners, function (index, partner) {
                     options +=
                         '<option value="' +
                         partner.id +
@@ -156,6 +160,10 @@ $(document).ready(function () {
                         partner.partner_name +
                         "</option>";
                 });
+                if (partners.length === 0) {
+                    options =
+                        '<option value="" disabled selected>No partners found for this department</option>';
+                }
                 $(selector).html(options);
                 if (selectedId) {
                     $(selector).val(selectedId);
@@ -164,9 +172,11 @@ $(document).ready(function () {
                     callback();
                 }
             },
-            error: function () {
+            error: function (xhr) {
                 $(selector).html(
-                    '<option value="" disabled selected>Failed to load partners</option>'
+                    '<option value="" disabled selected>Failed to load partners (HTTP ' +
+                        xhr.status +
+                        ')</option>'
                 );
             },
         });
@@ -330,13 +340,17 @@ $(document).ready(function () {
         }
     });
 
-    $("#business_department_id").on("change", function () {
-        loadPartnersDropdown($(this).val(), null, "#partner_id");
-    });
-
-    $("#edit_business_department_id").on("change", function () {
-        loadPartnersDropdown($(this).val(), null, "#edit_partner_id");
-    });
+    $(document).on(
+        "change",
+        "#business_department_id, #edit_business_department_id",
+        function () {
+            var partnerSelector =
+                this.id === "edit_business_department_id"
+                    ? "#edit_partner_id"
+                    : "#partner_id";
+            loadPartnersDropdown($(this).val(), null, partnerSelector);
+        }
+    );
 
     $("#partner_id, #edit_partner_id").on("change", function () {
         $(this).removeClass("is-invalid").addClass("is-valid");
