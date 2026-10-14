@@ -374,6 +374,7 @@ class DashboardController extends Controller
             'Akun pengguna belum terhubung dengan data employee. Hubungi administrator.'
         );
 
+        $isSecurityGuard = strtoupper(trim((string) $employee->job?->job_name)) === 'TENAGA KEAMANAN';
         $office = $employee->office ? Office::find($employee->office) : null;
 
         
@@ -383,7 +384,7 @@ class DashboardController extends Controller
 
         $today = Carbon::today()->toDateString();
         $yesterday = Carbon::yesterday()->toDateString();
-        $tomorrow = Carbon::tomorrow()->toDateString();
+        $tomorow = Carbon::tomorrow()->toDateString();
 
         $employeeShift = EmployeeShift::with('shift')->where('employee_id', $employee->id)
             ->where('date_shift', $today)
@@ -401,16 +402,22 @@ class DashboardController extends Controller
             ->where('date_shift', $yesterday)
             ->first();
 
-        $rangeStart = Carbon::parse($today . ' ' . $employee->shift->time_start)->subHours(2);
-        $rangeEnd = Carbon::parse($today . ' ' . $employee->shift->time_end)->addHours(3);
-
-        $timeStart = Carbon::parse($employee->shift->time_start);
-        $timeEnd = Carbon::parse($employee->shift->time_end);
-
-        if ($timeEnd < $timeStart) {
+        if ($isSecurityGuard) {
+            $rangeStart = Carbon::today()->startOfDay();
+            $rangeEnd = Carbon::today()->endOfDay();
+            $timeStart = null;
+            $timeEnd = null;
+        } else {
             $rangeStart = Carbon::parse($today . ' ' . $employee->shift->time_start)->subHours(2);
-            $rangeEnd = Carbon::parse($tomorow . ' ' . $employee->shift->time_end)->addHours(3);
-        }
+            $rangeEnd = Carbon::parse($today . ' ' . $employee->shift->time_end)->addHours(3);
+
+            $timeStart = Carbon::parse($employee->shift->time_start);
+            $timeEnd = Carbon::parse($employee->shift->time_end);
+
+            if ($timeEnd < $timeStart) {
+                $rangeStart = Carbon::parse($today . ' ' . $employee->shift->time_start)->subHours(2);
+                $rangeEnd = Carbon::parse($tomorow . ' ' . $employee->shift->time_end)->addHours(3);
+            }
 
         if ($employeeShiftToday) {
 
@@ -452,6 +459,7 @@ class DashboardController extends Controller
                     $rangeEnd = Carbon::parse($today . ' ' . $employeeShiftYesterday->shift->time_end)->addHours(3);
                 }
             }
+            }
         }
 
 
@@ -485,7 +493,7 @@ class DashboardController extends Controller
 
             $attendanceTimeIn = Carbon::parse($attendance->time_in);
 
-            if ($attendanceTimeIn > $timeStart) {
+            if ($timeStart && $attendanceTimeIn > $timeStart) {
                 $isLate = 'islate';
             }
 

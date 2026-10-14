@@ -55,6 +55,28 @@ class AttendanceController extends Controller
         return $earthRadius * $c;
     }
 
+    private function resolveSecurityPartnerLocation(Employee $employee): ?array
+    {
+        $partnerName = strtoupper(trim((string) optional($employee->partner)->partner_name));
+
+        $locations = [
+            'INMAS' => [-6.976713294233945, 109.78844136665832],
+            'INDOCHIYA' => [-6.976658659081617, 109.78831073160862],
+            'JOYLEEAD' => [-6.9763577918315764, 109.80012206679153],
+            'XINTAI' => [-6.971512668276101, 109.79145809564521],
+            'GFL' => [-6.953022493047286, 110.45022579562736],
+        ];
+
+        if (!isset($locations[$partnerName])) {
+            return null;
+        }
+
+        return [
+            'label' => $partnerName,
+            'coordinates' => $locations[$partnerName],
+        ];
+    }
+
     private function resolveAttendanceDistanceRule(Employee $employee): ?array
     {
         $departmentName = strtoupper(trim((string) optional($employee->department)->name_department));
@@ -99,6 +121,30 @@ class AttendanceController extends Controller
 
     private function validateAttendanceDistanceRule(Employee $employee, float $latitude, float $longitude, int $existingCheckinCount): void
     {
+        if ($this->hasUnrestrictedCheckin($employee)) {
+            if ($existingCheckinCount === 0) {
+                return;
+            }
+
+            $rule = $this->resolveSecurityPartnerLocation($employee);
+            if ($rule === null) {
+                return;
+            }
+
+            $distance = $this->distanceMeters(
+                $rule['coordinates'][0],
+                $rule['coordinates'][1],
+                $latitude,
+                $longitude
+            );
+
+            if ($distance > 1000) {
+                throw new \Exception($rule['label'] . ' checkpoints must be within 1 km of the assigned location.');
+            }
+
+            return;
+        }
+
         if ($this->isDistanceExemptEmployee($employee)) {
             return;
         }
@@ -126,7 +172,11 @@ class AttendanceController extends Controller
 
     private function validateCheckoutDistanceRule(Employee $employee, float $latitude, float $longitude): void
     {
-        if ($this->isDistanceExemptEmployee($employee)) {
+        if ($this->hasUnrestrictedCheckin($employee)) {
+            return;
+        }
+
+        if ($this->isDistanceExemptEmployee($employee)) {   
             return;
         }
 
@@ -192,6 +242,9 @@ class AttendanceController extends Controller
         // $yesterday = Carbon::parse('2025-09-06')->toDateString();
 
         $employee = Employee::with('division', 'department', 'job', 'grade', 'shift')->where('user_id', $user->id)->first();
+        if (!$employee) {
+            abort(422, 'Employee not found');
+        }
         $employeeLeave = EmployeeLeave::where('employee_id', $employee->id)->where('year', date('Y'))->first();
         $office = Office::where('id', $employee->office)->first();
 
@@ -211,6 +264,13 @@ class AttendanceController extends Controller
             ->where('date_shift', $yesterday)
             ->first();
 
+        $isSecurityGuard = $this->hasUnrestrictedCheckin($employee);
+        if ($isSecurityGuard) {
+            $rangeStart = Carbon::today()->startOfDay();
+            $rangeEnd = Carbon::today()->endOfDay();
+            $timeStart = null;
+            $timeEnd = null;
+        } else {
         $rangeStart = Carbon::parse($today . ' ' . $employee->shift->time_start)->subHours(2);
         $rangeEnd = Carbon::parse($today . ' ' . $employee->shift->time_end)->addHours(3);
 
@@ -262,6 +322,7 @@ class AttendanceController extends Controller
                     $rangeEnd = Carbon::parse($today . ' ' . $employeeShiftYesterday->shift->time_end)->addHours(3);
                 }
             }
+            }
         }
 
 
@@ -287,7 +348,7 @@ class AttendanceController extends Controller
 
             $attendanceTimeIn = Carbon::parse($attendance->time_in);
 
-            if ($attendanceTimeIn > $timeStart) {
+            if ($timeStart && $attendanceTimeIn > $timeStart) {
                 $isLate = 'islate';
             }
 
@@ -318,8 +379,8 @@ class AttendanceController extends Controller
             }
         }
 
-        $timeStart = $timeStart->format('H:i');
-        $timeEnd = $timeEnd->format('H:i');
+        $timeStart = $timeStart?->format('H:i') ?? '';
+        $timeEnd = $timeEnd?->format('H:i') ?? '';
 
         $overtimeTotalDays = EmployeeOvertime::where('employee_id', $employee->id)
             ->where('status', 'APPROVED')
@@ -505,8 +566,8 @@ class AttendanceController extends Controller
             DB::beginTransaction();
 
             $request->validate([
-                'latitudeCheckIn' => 'required',
-                'longitudeCheckIn' => 'required',
+                'latitudeCheckIn' => 'required|numeric|between:-90,90',
+                'longitudeCheckIn' => 'required|numeric|between:-180,180',
                 'photo_checkin' => 'required|image|mimes:jpeg,png,jpg|max:10048',
             ]);
 
@@ -524,8 +585,19 @@ class AttendanceController extends Controller
             $yesterday = Carbon::today()->subDays(1)->toDateString();
             $tomorow = Carbon::today()->addDay()->toDateString();
 
-            $employee = Employee::with(['shift', 'department', 'division', 'job', 'officeModel'])->where('user_id', $userId)->first();
+            $employee = Employee::with(['shift', 'department', 'division', 'job', 'partner', 'officeModel'])->where('user_id', $userId)->first();
+            if (!$employee) {
+                throw new \Exception('Employee not found');
+            }
 
+            $isSecurityGuard = $this->hasUnrestrictedCheckin($employee);
+            if ($isSecurityGuard) {
+                $shiftId = null;
+                $currentShift = null;
+                $timeStart = null;
+                $timeEnd = null;
+                $dateAttendance = $today;
+            } else {
             $shiftId = $employee->shift_id;
             $currentShift = $employee->shift;
 
@@ -604,6 +676,7 @@ class AttendanceController extends Controller
             } else {
                 throw new \Exception('Check-in is only allowed from 2 hours before the shift starts until the shift ends.');
             }
+            }
 
 
             $attendance = Attendance::where('employee_id', $employee->id)
@@ -627,7 +700,7 @@ class AttendanceController extends Controller
             $statusAttendance = 'PRESENT';
             $timeLate = '00:00:00';
 
-            if (!$this->hasUnrestrictedCheckin($employee) && $now > $timeStart) {
+            if (!$isSecurityGuard && $now > $timeStart) {
                 $timeLate = $now->diff($timeStart)->format('%H:%I:%S');
             }
 
@@ -648,8 +721,8 @@ class AttendanceController extends Controller
                     'date_attendance' => $dateAttendance,
                     'time_in' => $now->format('H:i'),
                     'type_attendance' => 'check_in',
-                    'shift_time_start' => $timeStart->format('H:i'),
-                    'shift_time_end' => $timeEnd->format('H:i'),
+                    'shift_time_start' => $timeStart?->format('H:i'),
+                    'shift_time_end' => $timeEnd?->format('H:i'),
                     'note' => null,
                     'status' => $statusAttendance,
                     'image' => $imageArray,
@@ -660,15 +733,17 @@ class AttendanceController extends Controller
 
                 $attendanceId = $attendance->id;
 
-                EmployeeShift::updateOrCreate(
-                    [
-                        'employee_id' => $employee->id,
-                        'date_shift' => $dateAttendance,
-                    ],
-                    [
-                        'shift_id' => $shiftId,
-                    ]
-                );
+                if ($shiftId) {
+                    EmployeeShift::updateOrCreate(
+                        [
+                            'employee_id' => $employee->id,
+                            'date_shift' => $dateAttendance,
+                        ],
+                        [
+                            'shift_id' => $shiftId,
+                        ]
+                    );
+                }
             }
 
             $totalCheckIn = AttendanceTracking::where('attendance_id', $attendanceId)
@@ -797,8 +872,8 @@ class AttendanceController extends Controller
 
             $request->validate([
 
-                'latitudeCheckOut' => 'required',
-                'longitudeCheckOut' => 'required',
+                'latitudeCheckOut' => 'required|numeric|between:-90,90',
+                'longitudeCheckOut' => 'required|numeric|between:-180,180',
                 'photo_checkout' => 'required|image|mimes:jpeg,png,jpg|max:10048',
             ]);
 
@@ -823,16 +898,21 @@ class AttendanceController extends Controller
             //$today = Carbon::parse('2025-09-07')->toDateString();
             //$yesterday = Carbon::parse('2025-09-06')->toDateString();
 
-            $employee = Employee::with(['shift', 'department', 'division', 'job', 'officeModel'])
+            $employee = Employee::with(['shift', 'department', 'division', 'job', 'partner', 'officeModel'])
                 ->where('user_id', $userId)
                 ->first();
+            if (!$employee) {
+                throw new \Exception('Employee not found');
+            }
 
+            $isSecurityGuard = $this->hasUnrestrictedCheckin($employee);
             $this->validateCheckoutDistanceRule(
                 $employee,
                 (float) $latitude,
                 (float) $longitude
             );
 
+            if (!$isSecurityGuard) {
             $employeeShiftToday = EmployeeShift::with('shift')
                 ->where('employee_id', $employee->id)
                 ->where('date_shift', $today)
@@ -892,6 +972,7 @@ class AttendanceController extends Controller
                     }
                 }
             }
+            }
 
 
             $attendance = Attendance::where('employee_id', $employee->id)
@@ -917,23 +998,25 @@ class AttendanceController extends Controller
                 ->first();
             // Prefer shift snapshot stored on attendance to keep checkout validation
             // consistent with the exact shift used during check-in.
-            $attendanceShiftStart = $attendance->shift_time_start
-                ?: $attendanceEmployeeShift?->shift?->time_start
-                ?: $employee->shift->time_start;
-            $attendanceShiftEnd = $attendance->shift_time_end
-                ?: $attendanceEmployeeShift?->shift?->time_end
-                ?: $employee->shift->time_end;
-            $shiftStartAt = Carbon::parse($dateAttendance.' '.$attendanceShiftStart);
-            $shiftEndAt = Carbon::parse($dateAttendance.' '.$attendanceShiftEnd);
+            if (!$isSecurityGuard) {
+                $attendanceShiftStart = $attendance->shift_time_start
+                    ?: $attendanceEmployeeShift?->shift?->time_start
+                    ?: $employee->shift->time_start;
+                $attendanceShiftEnd = $attendance->shift_time_end
+                    ?: $attendanceEmployeeShift?->shift?->time_end
+                    ?: $employee->shift->time_end;
+                $shiftStartAt = Carbon::parse($dateAttendance.' '.$attendanceShiftStart);
+                $shiftEndAt = Carbon::parse($dateAttendance.' '.$attendanceShiftEnd);
 
-            if ($shiftEndAt < $shiftStartAt) {
-                $shiftEndAt->addDay();
-            }
+                if ($shiftEndAt < $shiftStartAt) {
+                    $shiftEndAt->addDay();
+                }
 
-            $checkoutStart = $shiftEndAt->copy()->subMinutes(15);
+                $checkoutStart = $shiftEndAt->copy()->subMinutes(15);
 
-            if ($now < $checkoutStart) {
-                throw new \Exception('Check-out is only allowed from 15 minutes before the shift ends.');
+                if ($now < $checkoutStart) {
+                    throw new \Exception('Check-out is only allowed from 15 minutes before the shift ends.');
+                }
             }
 
             if ($attendance) {
@@ -982,7 +1065,7 @@ class AttendanceController extends Controller
 
                 $employeeShiftForCheckout = $attendanceEmployeeShift;
 
-                if (!$employeeShiftForCheckout) {
+                if (!$employeeShiftForCheckout && !$isSecurityGuard) {
                     throw new \Exception('Shift not found');
                 }
 
@@ -990,7 +1073,10 @@ class AttendanceController extends Controller
                     ->where('type', 'check_in')
                     ->count();
 
-                $requiredCheckpoint = max(1, min((int) $employeeShiftForCheckout->total_checkpoint, 8));
+                $requiredCheckpoint = max(
+                    1,
+                    min((int) ($employeeShiftForCheckout?->total_checkpoint ?? $employee->total_checkpoint), 8)
+                );
 
                 if ($totalCheckIn < $requiredCheckpoint) {
                     throw new \Exception('You can only check out after reaching the required number of check-ins.');

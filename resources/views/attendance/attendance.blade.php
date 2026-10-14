@@ -22,11 +22,10 @@
                 $profilePicture = asset('asset/img/avatar.png');
             }
             
-            $shiftTime = substr($employee->shift->time_start, 0, 5).' - '.substr($employee->shift->time_end, 0, 5);
-
-            if($employeeShift){
-                $shiftTime = substr($employeeShift->shift->time_start, 0, 5).' - '.substr($employeeShift->shift->time_end, 0, 5);
-            }
+            $shift = $employeeShift?->shift ?? $employee->shift;
+            $shiftTime = $shift
+                ? substr($shift->time_start, 0, 5).' - '.substr($shift->time_end, 0, 5)
+                : '-';
         @endphp
     </div>
 
