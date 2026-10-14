@@ -76,6 +76,31 @@ class PartnerController extends Controller
         return response()->json(['data' => $partners]);
     }
 
+    public function dropdown(Request $request)
+    {
+        $validated = $request->validate([
+            'business_department_id' => 'required|exists:departments,id',
+        ]);
+
+        $user = auth()->user();
+        $currentEmployee = $user?->employee;
+        $businessDepartmentId = (int) $validated['business_department_id'];
+
+        if (
+            strtoupper((string) ($user?->user_type ?? '')) !== 'SUPERADMIN'
+            && $businessDepartmentId !== (int) ($currentEmployee?->department_id ?? 0)
+        ) {
+            abort(403);
+        }
+
+        $partners = Partner::where('department_id', $businessDepartmentId)
+            ->where('status', '!=', 'DELETED')
+            ->orderBy('partner_name')
+            ->get(['id', 'partner_name']);
+
+        return response()->json(['data' => $partners]);
+    }
+
     public function show($id)
     {
         $partner = Partner::with(['department', 'office'])->find($id);

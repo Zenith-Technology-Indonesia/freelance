@@ -101,6 +101,9 @@
                             <select class="form-select input-select" id="business_department_id" name="business_department_id"
                                 required>
                                 <option value="" disabled selected>{{ __('general.select_department') }}</option>
+                                @foreach ($departments as $department)
+                                    <option value="{{ $department->id }}">{{ $department->name_department }}</option>
+                                @endforeach
                             </select>
                             <div class="invalid-feedback">
                                 Please select a department.
@@ -188,6 +191,9 @@
                             <select class="form-select input-select" id="edit_business_department_id" name="business_department_id"
                                 required>
                                 <option value="" disabled selected>{{ __('general.select_department') }}</option>
+                                @foreach ($departments as $department)
+                                    <option value="{{ $department->id }}">{{ $department->name_department }}</option>
+                                @endforeach
                             </select>
                             <div class="invalid-feedback">
                                 Please select a department.

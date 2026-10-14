@@ -97,9 +97,9 @@ function loadPartnersDropdown(
     }
 
     $.ajax({
-        url: appUrl + "/partner/index",
+        url: appUrl + "/partner/dropdown",
         type: "GET",
-        data: { department_id: businessDepartmentId },
+        data: { business_department_id: businessDepartmentId },
         success: function (response) {
             var options =
                 '<option value="" disabled selected>' + (jobDropdownText.select_partner || 'Select Partner') + '</option>';

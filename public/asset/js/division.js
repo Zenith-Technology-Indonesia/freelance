@@ -124,33 +124,12 @@ $(document).ready(function () {
     );
 
     function loadDepartmentsDropdown(callback) {
-        $.ajax({
-            url: appUrl + "/department/index",
-            type: "GET",
-            success: function (response) {
-                var departments = response.data;
-                var options =
-                    '<option value="" disabled selected>' + ((window.dropdownTranslations || {}).select_department || 'Select Department') + '</option>';
-                $.each(departments, function (index, department) {
-                    options +=
-                        '<option value="' +
-                        department.id +
-                        '">' +
-                        department.name_department +
-                        "</option>";
-                });
-                $("#business_department_id").html(options);
-                $("#edit_business_department_id").html(options);
-                if (callback && typeof callback === "function") {
-                    callback();
-                }
-            },
-            error: function () {
-                var errorOption =
-                    '<option value="" disabled selected>Failed to load departments</option>';
-                $("#business_department_id, #edit_business_department_id").html(errorOption);
-            },
-        });
+        $("#edit_business_department_id").html(
+            $("#business_department_id").html()
+        );
+        if (typeof callback === "function") {
+            callback();
+        }
     }
 
     function loadPartnersDropdown(businessDepartmentId, selectedId, selector, callback) {
@@ -162,9 +141,9 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: appUrl + "/partner/index",
+            url: appUrl + "/partner/dropdown",
             type: "GET",
-            data: { department_id: businessDepartmentId },
+            data: { business_department_id: businessDepartmentId },
             success: function (response) {
                 var options = selectPartner;
                 $.each(response.data || [], function (index, partner) {
@@ -234,12 +213,18 @@ $(document).ready(function () {
         $("#imageClearBtn").addClass("d-none");
         $("#addDivisionModal .alert-container").empty();
         var form = $("#addDivisionForm")[0];
+        var selectedDepartmentId = $("#business_department_id").val();
         form.reset();
+        if (selectedDepartmentId) {
+            $("#business_department_id").val(selectedDepartmentId).trigger("change");
+        }
         $(form).removeClass("was-validated");
         $("#business_department_id, #partner_id").removeClass("is-valid is-invalid");
-        $("#partner_id").html(
-            '<option value="" disabled selected>' + ((window.dropdownTranslations || {}).select_partner || 'Select Partner') + '</option>'
-        );
+        if (!selectedDepartmentId) {
+            $("#partner_id").html(
+                '<option value="" disabled selected>' + ((window.dropdownTranslations || {}).select_partner || 'Select Partner') + '</option>'
+            );
+        }
         $("#name_division").removeClass("is-valid is-invalid");
         $("#status").removeClass("is-valid is-invalid");
         $("#description").removeClass("is-valid is-invalid");
@@ -356,6 +341,14 @@ $(document).ready(function () {
     $("#partner_id, #edit_partner_id").on("change", function () {
         $(this).removeClass("is-invalid").addClass("is-valid");
     });
+
+    if ($("#business_department_id").val()) {
+        loadPartnersDropdown(
+            $("#business_department_id").val(),
+            null,
+            "#partner_id"
+        );
+    }
 
     $("#edit_image").change(function () {
         readURL(this, "#editImageLabel");

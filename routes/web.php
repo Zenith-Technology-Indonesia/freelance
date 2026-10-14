@@ -231,6 +231,7 @@ Route::middleware('auth', 'management')->group(function () {
     Route::get('/partner', [PartnerController::class, 'showPartnerPage'])->name('partner');
     Route::get('/partner/index', [PartnerController::class, 'index'])->name('partner.index');
     Route::get('/partner/options', [PartnerController::class, 'options'])->name('partner.options');
+    Route::get('/partner/dropdown', [PartnerController::class, 'dropdown'])->name('partner.dropdown');
     Route::get('/partner/{id}', [PartnerController::class, 'show'])->name('partner.show');
     Route::post('/partner/store', [PartnerController::class, 'store'])->name('partner.store');
     Route::put('/partner/{id}', [PartnerController::class, 'update'])->name('partner.update');

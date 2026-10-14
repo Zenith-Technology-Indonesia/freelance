@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Division;
+use App\Models\Department;
+use App\Models\Employee;
 use App\Models\Partner;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -317,7 +319,17 @@ class DivisionController extends Controller
 
     public function showDivisionPage()
     {
-        return view('master/division/division');
+        $user = auth()->user();
+        $currentEmployee = $user ? Employee::where('user_id', $user->id)->first() : null;
+        $departments = Department::where('status', '!=', 'DELETED')
+            ->when(
+                strtoupper((string) ($user?->user_type ?? '')) !== 'SUPERADMIN',
+                fn ($query) => $query->where('id', $currentEmployee?->department_id ?? 0)
+            )
+            ->orderBy('name_department')
+            ->get(['id', 'name_department']);
+
+        return view('master/division/division', compact('departments'));
     }
 
     /**
