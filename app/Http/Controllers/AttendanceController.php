@@ -1012,10 +1012,10 @@ class AttendanceController extends Controller
                     $shiftEndAt->addDay();
                 }
 
-                $checkoutStart = $shiftEndAt->copy()->subMinutes(15);
+                $checkoutStart = $shiftEndAt->copy()->subMinutes(30);
 
                 if ($now < $checkoutStart) {
-                    throw new \Exception('Check-out is only allowed from 15 minutes before the shift ends.');
+                    throw new \Exception('Check-out is only allowed from 30 minutes before the shift ends.');
                 }
             }
 
